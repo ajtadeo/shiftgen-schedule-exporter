@@ -1,40 +1,30 @@
 chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason == "install" || details.reason == "update") {
-    // set localstorage variables
+    // set local storage variables
     chrome.storage.local.set({
-      workdays: {}
-    }).then(() => {
-      console.log("Initialized workdays in local storage to {}, auth to false");
-    });
-
-    // open settings page
-    chrome.tabs.create({
-      url: "tabs/settings.html"
+      workdays: {},
+      user_workdays_set: false,
+      doctor_workdays_set: false,
+      pa_workdays_set: false
     })
+
+    // // open settings page
+    // chrome.tabs.create({
+    //   url: "tabs/settings.html"
+    // })
   }
 })
 
-const SHIFTGEN_ORIGIN = 'https://www.shiftgen.com';
+// const SHIFTGEN_ORIGIN = 'https://www.shiftgen.com';
 
-chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
-  if (!tab.url) return;
-  const url = new URL(tab.url);
-  // Enables the side panel on shiftgen.com
-  if (url.origin === SHIFTGEN_ORIGIN) {
-    console.log("opening side panel")
-    await chrome.sidePanel.setOptions({
-      tabId,
-      path: 'sidepanel/index.html',
-      enabled: true
-    });
-  } else {
-    // Disables the side panel on all other sites
-    await chrome.sidePanel.setOptions({
-      tabId,
-      enabled: false
-    })
-  }
-});
+// chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
+//   if (!tab.url) return;
+//   const url = new URL(tab.url);
+//   // Enables the side panel on shiftgen.com
+//   if (url.origin === SHIFTGEN_ORIGIN) {
+//     chrome.action.openPopup();
+//   }
+// });
 
 // chrome.sidePanel
 //   .setPanelBehavior({ openPanelOnActionClick: true })

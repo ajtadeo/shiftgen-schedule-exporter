@@ -1,12 +1,8 @@
-async function main() {
-  console.log("im a user page")
+const SUCCESS = 0;
 
+async function main() {
   // scrape page
   workdays = scrapeUser();
-  // console.log(`======== ${workdays.length} USER ========`);
-  // for (const wd of workdays) {
-  //   wd.print();
-  // }
 
   // update local storage with new workday info. startDateTime is the unique key
   let localStorage = await chrome.storage.local.get(["workdays"])
@@ -14,20 +10,27 @@ async function main() {
     const wd_json = wd.get_json();
     localStorage["workdays"][wd_json.startDateTime] = wd_json;
   }
-  console.log(localStorage)
 
   await chrome.storage.local.set({
-    "workdays": localStorage["workdays"]
-  }).then(() => {
-    console.log("Updated local storage with user page data. Reset provider name and type values.")
-  })
+    "workdays": localStorage["workdays"],
+    "user_workdays_set": true
+  });
+
+  console.log("Updated local storage with user page data. Reset provider name and type values.")
+  console.log(localStorage)
+  return SUCCESS;
 }
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  if (request.action === "scrape") {
-    main();
-    sendResponse({ status: "success", message: "Done." });
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "scrapeUser") {
+    (
+      async () => {
+        let status = await main();
+        sendResponse({ status: SUCCESS });
+      }
+    )();
   }
+  return true; // signals async response
 });
 
-console.log(chrome.runtime.getURL(""));
+console.log("User content script running...")

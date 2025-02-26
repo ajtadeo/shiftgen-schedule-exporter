@@ -10,7 +10,8 @@ async function main() {
   const [workdays, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.PA);
 
   await chrome.storage.local.set({
-    "workdays": updatedLocalStorage["workdays"]
+    "workdays": updatedLocalStorage["workdays"],
+    "pa_workdays_set": true
   });
 
   console.log(`Updated local storage with PA page data for ${workdays.length} workdays`)

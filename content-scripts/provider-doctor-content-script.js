@@ -12,7 +12,8 @@ async function main() {
   const [workdays, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.DOCTOR);
 
   await chrome.storage.local.set({
-    "workdays": updatedLocalStorage["workdays"]
+    "workdays": updatedLocalStorage["workdays"],
+    "doctor_workdays_set": true
   });
 
   console.log(`Updated local storage with doctor page data for ${workdays.length} workdays`)

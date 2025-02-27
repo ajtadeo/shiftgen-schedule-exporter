@@ -1,5 +1,3 @@
-const SUCCESS = 0;
-
 async function main() {
   const localStorage = await chrome.storage.local.get(["workdays"]);
   if (Object.entries(localStorage["workdays"]).length === 0) {

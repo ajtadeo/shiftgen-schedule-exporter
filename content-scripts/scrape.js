@@ -1,8 +1,3 @@
-const PROVIDER_ENUM = {
-  DOCTOR: 1,
-  PA: 2
-}
-
 const patterns = {
   1: { pattern: /(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4}):\s((?:\w|\*)+)/, groupNames: ["location", "start_time_str", "end_time_str", "name"] }, // North 2130-0600: Axs
   2: { pattern: /(\d{2}|\d{4})-(\d{2}|\d{4})\s\((\w+)\):\s((?:\w|\*)+)/, groupNames: ["start_time_str", "end_time_str", "location", "name"] }, // 1700-0100 (RED): Axs
@@ -18,8 +13,8 @@ class WorkDay {
     this.location = location;
     this.overnight = overnight;
     this.name = name;
-    this.providerType = -1;
-    this.providerName = "FIX ME";
+    this.providerType = PROVIDER_ENUM.UNKNOWN;
+    this.providerName = "";
   }
 
   set_provider(providerName, providerType) {

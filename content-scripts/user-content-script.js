@@ -1,5 +1,3 @@
-const SUCCESS = 0;
-
 async function main() {
   // scrape page
   workdays = scrapeUser();

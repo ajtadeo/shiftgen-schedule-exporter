@@ -1,7 +1,3 @@
-const SUCCESS = 0;
-const ERROR_USER_WORKDAYS_NOT_SET = 1;
-const ERROR_INVALID_STATUS = 2;
-
 async function main() {
   const localStorage = await chrome.storage.local.get(["workdays"]);
   if (Object.entries(localStorage["workdays"]).length === 0) {

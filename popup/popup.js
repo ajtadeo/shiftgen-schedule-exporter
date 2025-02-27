@@ -1,96 +1,3 @@
-const SUCCESS = 0;
-const CALENDAR_ID = "918b6770430ec3c9ba0675aba87070cc84d2a1764db08679fedd0e8fd084009c@group.calendar.google.com"
-const TEST_WORKDAYS = {
-  "2025-03-09T15:00:00.000-08:00": {
-      "endDateTime": "2025-03-09T23:30:00.000-08:00",
-      "location": "PA",
-      "overnight": true,
-      "providerName": "NISHIOKA",
-      "providerType": 2,
-      "startDateTime": "2025-03-09T15:00:00.000-08:00"
-  },
-  "2025-03-10T12:30:00.000-08:00": {
-      "endDateTime": "2025-03-10T21:00:00.000-08:00",
-      "location": "South",
-      "overnight": false,
-      "providerName": "SAINTGEORGES",
-      "providerType": 1,
-      "startDateTime": "2025-03-10T12:30:00.000-08:00"
-  },
-  "2025-03-11T16:00:00.000-08:00": {
-      "endDateTime": "2025-03-12T00:00:00.000-08:00",
-      "location": "RED",
-      "overnight": true,
-      "providerName": "ASSAF",
-      "providerType": 1,
-      "startDateTime": "2025-03-11T16:00:00.000-08:00"
-  },
-  "2025-03-12T16:00:00.000-08:00": {
-      "endDateTime": "2025-03-13T00:00:00.000-08:00",
-      "location": "RED",
-      "overnight": true,
-      "providerName": "ROGAN",
-      "providerType": 1,
-      "startDateTime": "2025-03-12T16:00:00.000-08:00"
-  },
-  "2025-03-17T16:00:00.000-08:00": {
-      "endDateTime": "2025-03-18T00:00:00.000-08:00",
-      "location": "RED",
-      "overnight": true,
-      "providerName": "SAINTGEORGES",
-      "providerType": 1,
-      "startDateTime": "2025-03-17T16:00:00.000-08:00"
-  },
-  "2025-03-18T16:00:00.000-08:00": {
-      "endDateTime": "2025-03-19T00:00:00.000-08:00",
-      "location": "RED",
-      "overnight": true,
-      "providerName": "ENGLAND",
-      "providerType": 1,
-      "startDateTime": "2025-03-18T16:00:00.000-08:00"
-  },
-  "2025-03-19T15:00:00.000-08:00": {
-      "endDateTime": "2025-03-19T23:30:00.000-08:00",
-      "location": "PA",
-      "overnight": true,
-      "providerName": "JIVAN",
-      "providerType": 2,
-      "startDateTime": "2025-03-19T15:00:00.000-08:00"
-  },
-  "2025-03-24T16:00:00.000-08:00": {
-      "endDateTime": "2025-03-25T00:00:00.000-08:00",
-      "location": "RED",
-      "overnight": true,
-      "providerName": "DICKSON",
-      "providerType": 1,
-      "startDateTime": "2025-03-24T16:00:00.000-08:00"
-  },
-  "2025-03-25T19:30:00.000-08:00": {
-      "endDateTime": "2025-03-26T04:00:00.000-08:00",
-      "location": "PA",
-      "overnight": true,
-      "providerName": "FIX ME",
-      "providerType": -1,
-      "startDateTime": "2025-03-25T19:30:00.000-08:00"
-  },
-  "2025-03-26T20:30:00.000-08:00": {
-      "endDateTime": "2025-03-27T05:00:00.000-08:00",
-      "location": "South",
-      "overnight": true,
-      "providerName": "JAYAMAHA",
-      "providerType": 1,
-      "startDateTime": "2025-03-26T20:30:00.000-08:00"
-  },
-  "2025-03-30T20:30:00.000-08:00": {
-      "endDateTime": "2025-03-31T05:00:00.000-08:00",
-      "location": "North",
-      "overnight": true,
-      "providerName": "JAYAMAHA",
-      "providerType": 1,
-      "startDateTime": "2025-03-30T20:30:00.000-08:00"
-  }
-}
-
 window.onload = async function () {
   // set up scrape user schedule button 
   document.querySelector('#scrape-user-button').addEventListener('click', () => {
@@ -151,13 +58,19 @@ window.onload = async function () {
   });
 
   // set up google calendar export button
-  document.querySelector("#google-calendar-export-button").addEventListener('click', () => {
+  document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
+    let localStorage = await chrome.storage.local.get(["workdays", "calendar_id"]);
+    if (localStorage.calendar_id === "") {
+      document.querySelector("#message").textContent = "Need to set Calendar ID before exporting to Google Calendar."
+      return;
+    }
+    
     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
-      let localStorage = await chrome.storage.local.get(["workdays"]);
       let workdays = localStorage.workdays;
+      let calendarId = localStorage.calendar_id;
       let postedAllEvents = true;
       for (const [key, value] of Object.entries(workdays)) {
-        let result = exportToGoogleCalendar(token, value);
+        let result = exportToGoogleCalendar(token, calendarId, value);
         if (result === false) {
           postedAllEvents = false;
           break;
@@ -226,6 +139,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 /**
  * Sends a POST request to create a new event for workday in Google Calendar
  * @param {string} token 
+ * @param {string} calendarId
  * @param {object} workday 
  * 
  * Sample workday object:
@@ -238,7 +152,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
  *   "startDateTime": "2025-03-09T15:00:00.000-08:00"
  * }
  */
-function exportToGoogleCalendar(token, workday) {
+function exportToGoogleCalendar(token, calendarId, workday) {
   console.log(workday)
   let event = {
     summary: `CHOC Scribe: ${workday.location} ${workday.providerName}`,
@@ -264,7 +178,7 @@ function exportToGoogleCalendar(token, workday) {
   };
 
   fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events`,
+    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
     options
   )
   .then(response => {

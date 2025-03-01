@@ -46,9 +46,9 @@ class Shift {
 
   print() {
     let prefix = "";
-    if (this.providerType === PROVIDER_ENUM.DOC_PROVIDER) {
+    if (this.providerType === PROVIDER_ENUM.DOCTOR) {
       prefix = "DR ";
-    } else if (this.providerType === PROVIDER_ENUM.PA_NP_PROVIDER) {
+    } else if (this.providerType === PROVIDER_ENUM.PA) {
       prefix = "PA/NP ";
     }
 

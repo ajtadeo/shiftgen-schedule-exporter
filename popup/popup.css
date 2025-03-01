@@ -1,9 +1,13 @@
 body {
-  width: 300px;
+  width: 500px;
   text-align: center;
 }
 
 h1 {
+  margin-bottom: 0;
+}
+
+h2 {
   margin-bottom: 0;
 }
 
@@ -26,4 +30,29 @@ h3 {
   cursor: pointer;
   color: blue;
   text-decoration: underline;
+}
+
+#settings-table {
+  width: 100%;
+}
+
+#settings-table h3 {
+  margin: 0;
+}
+
+#settings-table input {
+  width: 100%;
+}
+
+#settings-table .settings-message p {
+  visibility: hidden;
+}
+
+#shifts-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+#shifts-table h3 {
+  margin: 0;
 }

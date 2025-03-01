@@ -11,11 +11,6 @@ chrome.runtime.onInstalled.addListener(function (details) {
       redirect_to_print_page: false,
       target_month: "march"
     })
-
-    // open settings page on install
-    chrome.tabs.create({
-      url: "settings/settings.html"
-    })
   }
 })
 

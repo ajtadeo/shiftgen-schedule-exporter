@@ -1,7 +1,8 @@
 window.onload = async function () {
+  let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
+
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
-    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id"]);
     if (localStorage.calendar_id === "") {
       document.querySelector("#message").textContent = "Need to set Calendar ID before exporting to Google Calendar."
       return;
@@ -49,6 +50,73 @@ window.onload = async function () {
     // initiate automatic scraping
     await chrome.tabs.create({ active: false, url: "https://www.shiftgen.com/member/multi_site_schedule" });
   })
+  
+  // populate shifts table
+  let shifts = localStorage.shifts;
+  const tbody = document.querySelector("#shift-tbody");
+  const template = document.querySelector("#shift-template");
+  for (const [key, value] of Object.entries(shifts)) {
+    const clone = template.content.cloneNode(true);
+    clone.querySelector(".shift-start").textContent = new Date(value.startDateTime).toLocaleString();
+    clone.querySelector(".shift-end").textContent = new Date(value.endDateTime).toLocaleString();
+    clone.querySelector(".shift-location").textContent = value.location;
+    clone.querySelector(".shift-provider-name").textContent = value.providerName;
+
+    let providerType;
+    if (value.providerType === PROVIDER_ENUM.DOCTOR) {
+      providerType = "Doctor"
+    } else if (value.providerType === PROVIDER_ENUM.PA) {
+      providerType = "PA"
+    } else if (value.providerType === PROVIDER_ENUM.UNKNOWN) {
+      providerType = "Unknown"
+    } else {
+      providerType = "Invalid Type"
+    }
+    clone.querySelector(".shift-provider-type").textContent = providerType;
+    clone.querySelector(".shift-overnight").textContent = value.overnight;
+    tbody.appendChild(clone);
+  }
+
+  // handle calendar id form submission
+  if (localStorage.calendar_id !== "") {
+    document.querySelector("#calendar-id-input").value = localStorage.calendar_id;
+  }
+  document.querySelector("#calendar-id-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const calendarId = document.getElementById("calendar-id-input").value;
+  
+    await chrome.storage.local.set({ "calendar_id": calendarId }, function() {
+      if (chrome.runtime.lastError) {
+        document.querySelector("#calendar-id-message").textContent = "Error: " + chrome.runtime.lastError;
+        console.error("Error saving to storage:", chrome.runtime.lastError);
+      } else {
+        document.querySelector("#calendar-id-button").disabled = true;
+        // document.querySelector("#calendar-id-input").disabled = true;
+        document.querySelector("#calendar-id-message").style.visibility = "visible"
+        console.log("Calendar ID saved:", calendarId);
+      }
+    });
+  }); 
+  
+  // handle target month form submission
+  if (localStorage.target_month !== "") {
+    document.querySelector("#target-month-input").value = localStorage.target_month;
+  }
+  document.querySelector("#target-month-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const targetMonth = document.getElementById("target-month-input").value.toLowerCase();
+  
+    await chrome.storage.local.set({ "target_month": targetMonth }, function() {
+      if (chrome.runtime.lastError) {
+        document.querySelector("#target-month-message").textContent = "Error: " + chrome.runtime.lastError;
+        console.error("Error saving to storage:", chrome.runtime.lastError);
+      } else {
+        document.querySelector("#target-month-button").disabled = true;
+        document.querySelector("#target-month-message").style.visibility = "visible"
+        console.log("Target Month saved:", targetMonth);
+      }
+    });
+  }); 
 };
 
 // enable/disable scrape buttons based on status flags

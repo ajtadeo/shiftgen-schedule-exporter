@@ -21,9 +21,9 @@ window.onload = async function () {
       }
 
       if (!postedAllEvents) {
-        document.querySelector("#message").textContent = "Failed to export shifts to Google Calendar. Please try again."
+        alert("Failed to export shifts to Google Calendar. Please try again.")
       } else {
-        document.querySelector("#message").textContent = "Successfully exported shifts to Google Calendar!"
+        alert("Successfully exported shifts to Google Calendar!")
       }
 
       // SANITY CHECK

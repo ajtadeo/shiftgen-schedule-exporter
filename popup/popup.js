@@ -117,6 +117,18 @@ window.onload = async function () {
       }
     });
   }); 
+
+  // setup clear shifts button
+  document.querySelector("#clear-shifts").addEventListener("click", async () => {
+    await chrome.storage.local.set({
+      shifts: {},
+      user_shifts_set: false,
+      doctor_shifts_set: false,
+      pa_shifts_set: false
+    });
+
+    alert("Cleared shifts! Please refresh popup.")
+  })
 };
 
 // enable/disable scrape buttons based on status flags

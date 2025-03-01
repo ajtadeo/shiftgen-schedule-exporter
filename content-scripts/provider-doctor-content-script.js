@@ -1,40 +1,32 @@
+let error_msg = ""
+
 async function main() {
-  const localStorage = await chrome.storage.local.get(["workdays"]);
-  if (Object.entries(localStorage["workdays"]).length === 0) {
-    console.warn("User workdays have not been set. Stopping.")
-    return ERROR_USER_WORKDAYS_NOT_SET;
+  const localStorage = await chrome.storage.local.get(["shifts"]);
+  if (Object.entries(localStorage["shifts"]).length === 0) {
+    error_msg = "User shifts have not been set. Stopping."
+    return FAILURE;
   }
 
-  const [workdays, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.DOCTOR);
+  const [shifts, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.DOCTOR);
 
   await chrome.storage.local.set({
-    "workdays": updatedLocalStorage["workdays"],
-    "doctor_workdays_set": true
+    "shifts": updatedLocalStorage["shifts"],
+    "doctor_shifts_set": true
   });
 
-  console.log(`Updated local storage with doctor page data for ${workdays.length} workdays`)
-  console.log(updatedLocalStorage)
   return SUCCESS;
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "scrapeProviderDoctor") {
-    (
-      async () => {
-        let status = await main();
-        if (status === SUCCESS) {
-          console.log("success")
-          sendResponse({ status: SUCCESS});
-        } else if (status === ERROR_USER_WORKDAYS_NOT_SET) {
-          console.log("sending error msg")
-          sendResponse({ status: ERROR_USER_WORKDAYS_NOT_SET, message: "User workdays have not been set." });
-        } else {
-          sendResponse({ status: ERROR_INVALID_STATUS, message: "Got an invalid status." });
-        }
-      }
-    )();
-  }
-  return true; // signals async response
-});
+window.onload = async function () {
+  let localStorage = await chrome.storage.local.get(["scraping_status"]);
+  if (localStorage.scraping_status === SCRAPING_STATUS_ENUM.DOCTOR) {
+    let status = await main();
+    await new Promise(r => setTimeout(r, 5)); // wait for storage to set correctly
 
-console.log("Running doctor content script...")
+    if (status === SUCCESS) {
+      chrome.runtime.sendMessage({action: "closeCurrentTab"});
+    } else {
+      alert(error_msg)
+    }
+  }
+}

@@ -1,14 +1,27 @@
 const SUCCESS = 0;
-const ERROR_USER_WORKDAYS_NOT_SET = 1;
-const ERROR_INVALID_STATUS = 2;
+const FAILURE = 1;
 
 const PROVIDER_ENUM = {
     UNKNOWN: 0,
     DOCTOR: 1,
     PA: 2
-  }
+}
 
-const TEST_WORKDAYS = {
+const SCRAPING_STATUS_ENUM = {
+    INACTIVE: 0,
+    STARTING: 1,
+    USER: 2,
+    PA: 3,
+    DOCTOR: 4,
+}
+
+const SITE_ID_ENUM = {
+    USER: 83,
+    PA: 84,
+    DOCTOR: 80
+}
+
+const TEST_SHIFTS = {
   "2025-03-09T15:00:00.000-08:00": {
       "endDateTime": "2025-03-09T23:30:00.000-08:00",
       "location": "PA",
@@ -98,3 +111,5 @@ const TEST_WORKDAYS = {
       "startDateTime": "2025-03-30T20:30:00.000-08:00"
   }
 }
+
+// export default { SCRAPING_STATUS_ENUM };

@@ -1,30 +1,33 @@
+let error_msg = ""
+
 async function main() {
-  const localStorage = await chrome.storage.local.get(["workdays"]);
-  if (Object.entries(localStorage["workdays"]).length === 0) {
-    console.warn("User workdays have not been set. Stopping.")
-    return;
+  const localStorage = await chrome.storage.local.get(["shifts"]);
+  if (Object.entries(localStorage["shifts"]).length === 0) {
+    error_msg = "User shifts have not been set. Stopping."
+    return FAILURE;
   }
 
-  const [workdays, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.PA);
+  const [shifts, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.PA);
 
   await chrome.storage.local.set({
-    "workdays": updatedLocalStorage["workdays"],
-    "pa_workdays_set": true
+    "shifts": updatedLocalStorage["shifts"],
+    "pa_shifts_set": true
   });
 
-  console.log(`Updated local storage with PA page data for ${workdays.length} workdays`)
-  console.log(updatedLocalStorage)
   return SUCCESS
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "scrapeProviderPa") {
-    (
-      async () => {
-        let status = await main();
-        sendResponse({ status: SUCCESS });
-      }
-    )();
+window.onload = async function () {
+  let localStorage = await chrome.storage.local.get(["scraping_status"]);
+  if (localStorage.scraping_status === SCRAPING_STATUS_ENUM.PA) {
+    let status = await main();
+    console.log("waiting to timeout")
+    await new Promise(r => setTimeout(r, 5)); // wait for storage to set correctly
+
+    if (status === SUCCESS) {
+      chrome.runtime.sendMessage({action: "closeCurrentTab"});
+    } else {
+      alert(error_msg)
+    }
   }
-  return true; // signals async response
-});
+}

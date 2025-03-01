@@ -4,9 +4,9 @@ const patterns = {
   3: { pattern: /(\d{2}|\d{4})-(\d{2}|\d{4})\s(\w+):\s((?:\w|\*)+)/, groupNames: ["start_time_str", "end_time_str", "location", "name"] } // 1900-0330 PA: Axs
 };
 
-let userWorkdaysDict = {}
+let userShiftsDict = {}
 
-class WorkDay {
+class Shift {
   constructor(startDateTime, endDateTime, location, name, overnight = false) {
     this.startDateTime = startDateTime;
     this.endDateTime = endDateTime;
@@ -132,7 +132,7 @@ function parseEvent(elem, month, year) {
     endDateTime.setDate(endDateTime.getDate() + 1)
   }
 
-  return new WorkDay(
+  return new Shift(
     startDateTime,
     endDateTime,
     info["location"],
@@ -148,20 +148,20 @@ function scrapeUser() {
   const month = match[1];
   const year = match[2];
 
-  // get all workday elements
+  // get all shift elements
   const elements = document.querySelectorAll("td > span");
 
-  // parse workday elements
-  let workdays = [];
+  // parse shift elements
+  let shifts = [];
   for (const elem of elements) {
-    const wd = parseEvent(elem, month, year);
-    if (wd !== undefined) {
-      userWorkdaysDict[wd.startDateTime] = wd;
-      workdays.push(wd);
+    const shift = parseEvent(elem, month, year);
+    if (shift !== undefined) {
+      userShiftsDict[shift.startDateTime] = shift;
+      shifts.push(shift);
     }
   }
 
-  return workdays;
+  return shifts;
 }
 
 function scrapeProvider(localStorage, providerType) {
@@ -171,28 +171,28 @@ function scrapeProvider(localStorage, providerType) {
   const month = match[1];
   const year = match[2];
 
-  // get all workday elements
+  // get all shift elements
   const elements = document.querySelectorAll("td > span");
 
-  // parse workday elements
-  const workdays = [];
+  // parse shift elements
+  const shifts = [];
   for (const elem of elements) {
     // start time always aligns with axs
-    const wd = parseEvent(elem, month, year);
+    const shift = parseEvent(elem, month, year);
     if (providerType === PROVIDER_ENUM.PA) {
-      wd.location = "PA";
+      shift.location = "PA";
     }
 
-    if (wd !== undefined) {
-      const dateStr = wd.get_utc_to_local_isostring(wd.startDateTime)
-      const userWd = localStorage["workdays"][dateStr];
-      if (userWd !== undefined && userWd["location"] === wd.location) {
-        workdays.push(wd);
-        localStorage["workdays"][dateStr]["providerName"] = wd.name;
-        localStorage["workdays"][dateStr]["providerType"] = providerType;
+    if (shift !== undefined) {
+      const dateStr = shift.get_utc_to_local_isostring(shift.startDateTime)
+      const userShift = localStorage["shifts"][dateStr];
+      if (userShift !== undefined && userShift["location"] === shift.location) {
+        shifts.push(shift);
+        localStorage["shifts"][dateStr]["providerName"] = shift.name;
+        localStorage["shifts"][dateStr]["providerType"] = providerType;
       }
     }
   }
 
-  return [workdays, localStorage];
+  return [shifts, localStorage];
 }

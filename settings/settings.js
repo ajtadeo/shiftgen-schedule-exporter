@@ -1,9 +1,9 @@
 window.onload = async function () {
   // load calendar id value
-  let localStorage = await chrome.storage.local.get(["calendar_id", "user_workdays_set", "pa_workdays_set", "doctor_workdays_set", "workdays", "name"]);
+  let localStorage = await chrome.storage.local.get(["calendar_id", "user_shifts_set", "pa_shifts_set", "doctor_shifts_set", "shifts", "target_month"]);
   
   // populate shifts table
-  let shifts = localStorage.workdays;
+  let shifts = localStorage.shifts;
   const tbody = document.querySelector("#shift-tbody");
   const template = document.querySelector("#shift-template");
   for (const [key, value] of Object.entries(shifts)) {
@@ -49,22 +49,22 @@ window.onload = async function () {
     });
   }); 
   
-  // handle name form submission
-  if (localStorage.name !== "") {
-    document.querySelector("#name-input").value = localStorage.name;
+  // handle target month form submission
+  if (localStorage.target_month !== "") {
+    document.querySelector("#target-month-input").value = localStorage.target_month;
   }
-  document.querySelector("#name-form").addEventListener("submit", async (event) => {
+  document.querySelector("#target-month-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const name = document.getElementById("name-input").value;
+    const targetMonth = document.getElementById("target-month-input").value.toLowerCase();
   
-    await chrome.storage.local.set({ "name": name }, function() {
+    await chrome.storage.local.set({ "target_month": targetMonth }, function() {
       if (chrome.runtime.lastError) {
-        document.querySelector("#name-message").textContent = "Error: " + chrome.runtime.lastError;
+        document.querySelector("#target-month-message").textContent = "Error: " + chrome.runtime.lastError;
         console.error("Error saving to storage:", chrome.runtime.lastError);
       } else {
-        document.querySelector("#name-button").disabled = true;
-        document.querySelector("#name-message").textContent = "Saved"
-        console.log("Name saved:", name);
+        document.querySelector("#target-month-button").disabled = true;
+        document.querySelector("#target-month-message").textContent = "Saved"
+        console.log("Target Month saved:", targetMonth);
       }
     });
   }); 

@@ -9,7 +9,6 @@
   <div id="content">
 
     <h1 id="title">ShiftGen Calendar</h1>
-    <h3 id="open-shiftgen-link" class="link">Open ShiftGen</h3>
     <div class="button-container">
       <button id="scrape-button">Scrape ShiftGen Schedule</button>
       <button id="google-calendar-export-button" disabled>Export to Google Calendar</button>
@@ -45,7 +44,7 @@
       </tbody>
     </table>
   
-    <h2>Shifts</h2>
+    <h2 id="shifts-header">Shifts</h2>
     <table id="shifts-table">
       <tbody id="shift-tbody">
         <tr>
@@ -60,6 +59,9 @@
     </table>
 
     <button id="clear-shifts">Clear Shifts</button>
+
+    <hr/>
+    <p id="footer">For Axs &hearts;</p>
   
     <template id="shift-template">
       <tr>

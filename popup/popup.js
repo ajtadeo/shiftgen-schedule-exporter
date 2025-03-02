@@ -4,7 +4,7 @@ window.onload = async function () {
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
     if (localStorage.calendar_id === "") {
-      document.querySelector("#message").textContent = "Need to set Calendar ID before exporting to Google Calendar."
+      alert("Please set Calendar ID before exporting to Google Calendar.")
       return;
     }
     
@@ -31,14 +31,6 @@ window.onload = async function () {
       //   exportToGoogleCalendar(token, value)
       // }
     })
-  });
-
-  // set up open shiftgen link
-  document.querySelector("#open-shiftgen-link").addEventListener('click', () => {
-    chrome.tabs.create({ 
-      active: true,
-      url: "https://www.shiftgen.com/"
-    });
   });
 
   // setup automatic website scraper for all shifts

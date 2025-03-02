@@ -1,10 +1,23 @@
 body {
   width: 500px;
   text-align: center;
+  font-family: Calibri, "Lucida Grande";
 }
 
-h1 {
-  margin-bottom: 0;
+input, button {
+  font-family: Calibri, "Lucida Grande";
+  border: solid #A16D13 1px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button {
+  background-color: #FCF5E9;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #F0C377;
 }
 
 h2 {
@@ -26,12 +39,6 @@ h3 {
   padding: 0.5rem;
 }
 
-.link {
-  cursor: pointer;
-  color: blue;
-  text-decoration: underline;
-}
-
 #settings-table {
   width: 100%;
 }
@@ -48,11 +55,30 @@ h3 {
   visibility: hidden;
 }
 
+#shifts-header {
+  padding-bottom: 10px;
+}
+
 #shifts-table {
   width: 100%;
   table-layout: fixed;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+#shifts-table th {
+  background-color: #F0C377;
 }
 
 #shifts-table h3 {
   margin: 0;
+  padding: 5px;
+}
+
+#clear-shifts {
+  margin-bottom: 10px;
+}
+
+#footer {
+  color: #696969
 }

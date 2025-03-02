@@ -20,6 +20,10 @@
       "matches": ["https://www.shiftgen.com/", "https://shiftgen.com/"]
     },
     {
+      "js": ["global.js", "content-scripts/shiftgen-login-content-script.js"],
+      "matches": ["https://www.shiftgen.com/login", "https://shiftgen.com/login"]
+    },
+    {
       "js": ["global.js", "content-scripts/scrape.js", "content-scripts/user-content-script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*",

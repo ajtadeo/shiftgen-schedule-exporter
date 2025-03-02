@@ -35,6 +35,11 @@ window.onload = async function () {
 
   // setup automatic website scraper for all shifts
   document.querySelector("#scrape-button").addEventListener("click", async () => {
+    if (localStorage.target_month === "") {
+      alert("Please set target month before scraping shifts.")
+      return;
+    }
+
     await chrome.storage.local.set({
       scraping_status: SCRAPING_STATUS_ENUM.STARTING,
     });

@@ -9,7 +9,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
       calendar_id: "",
       scraping_status: 0, // SCRAPING_STATUS_ENUM.INACTIVE
       redirect_to_print_page: false,
-      target_month: "march"
+      target_month: ""
     })
   }
 })

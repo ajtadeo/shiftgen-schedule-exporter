@@ -132,6 +132,15 @@ function parseEvent(elem, month, year) {
     endDateTime.setDate(endDateTime.getDate() + 1)
   }
 
+  // rename provider names
+  if (info["name"] === "SAINTGEORGES") {
+    info["name"] = "MSG";
+  }
+
+  if (info["name"] === "NISHIOKA") {
+    info["name"] = "NISH";
+  }
+
   return new Shift(
     startDateTime,
     endDateTime,

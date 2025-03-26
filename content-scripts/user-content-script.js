@@ -8,7 +8,7 @@ async function main() {
   let localStorage = await chrome.storage.local.get(["shifts"])
   for (const wd of shifts) {
     const wd_json = wd.get_json();
-    localStorage["shifts"][wd_json.startDateTime] = wd_json;
+    localStorage["shifts"][wd_json.dateStr] = wd_json;
   }
 
   await chrome.storage.local.set({

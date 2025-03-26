@@ -8,6 +8,9 @@ input, button {
   font-family: Calibri, "Lucida Grande";
   border: solid #A16D13 1px;
   border-radius: 5px;
+}
+
+input {
   cursor: pointer;
 }
 
@@ -16,8 +19,9 @@ button {
   font-weight: bold;
 }
 
-button:hover {
+button:hover:not([disabled]) {
   background-color: #F0C377;
+  cursor: pointer;
 }
 
 h2 {

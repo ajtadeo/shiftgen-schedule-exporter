@@ -1,8 +1,8 @@
 window.onload = async function () {
-  let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
-
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
+    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
+
     if (localStorage.calendar_id === "") {
       alert("Please set Calendar ID before exporting to Google Calendar.")
       return;
@@ -35,6 +35,8 @@ window.onload = async function () {
 
   // setup automatic website scraper for all shifts
   document.querySelector("#scrape-button").addEventListener("click", async () => {
+    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
+
     if (localStorage.target_month === "") {
       alert("Please set target month before scraping shifts.")
       return;
@@ -49,6 +51,7 @@ window.onload = async function () {
   })
   
   // populate shifts table
+  let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
   let shifts = localStorage.shifts;
   const tbody = document.querySelector("#shift-tbody");
   const template = document.querySelector("#shift-template");
@@ -124,7 +127,12 @@ window.onload = async function () {
       pa_shifts_set: false
     });
 
-    alert("Cleared shifts! Please refresh popup.")
+    const tbody = document.querySelector("#shift-tbody");
+    const data_rows = tbody.querySelectorAll('tr:has(td)');
+    for (let i = 0; i < data_rows.length; i++) {
+      tbody.removeChild(data_rows[i]);
+    }
+
   })
 };
 

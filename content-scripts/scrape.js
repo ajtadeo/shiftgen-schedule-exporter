@@ -1,13 +1,14 @@
 const patterns = {
-  1: { pattern: /(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4}):\s((?:\w|\*)+)/, groupNames: ["location", "start_time_str", "end_time_str", "name"] }, // North 2130-0600: Axs
-  2: { pattern: /(\d{2}|\d{4})-(\d{2}|\d{4})\s\((\w+)\):\s((?:\w|\*)+)/, groupNames: ["start_time_str", "end_time_str", "location", "name"] }, // 1700-0100 (RED): Axs
-  3: { pattern: /(\d{2}|\d{4})-(\d{2}|\d{4})\s(\w+):\s((?:\w|\*)+)/, groupNames: ["start_time_str", "end_time_str", "location", "name"] } // 1900-0330 PA: Axs
+  1: { pattern: /^(?!SJH)(?!PIT)(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4}):\s((?:\w|\*)+)$/, groupNames: ["location", "start_time_str", "end_time_str", "name"] }, // North 2130-0600: Physician
+  2: { pattern: /^(\d{2}|\d{4})-(\d{2}|\d{4})\s\((\w+)\):\s((?:\w|\*)+)$/, groupNames: ["start_time_str", "end_time_str", "location", "name"] }, // 1700-0100 (RED): Axs
+  3: { pattern: /^(\d{2}|\d{4})-(\d{2}|\d{4})\s(\w+):\s((?:\w|\*)+)$/, groupNames: ["start_time_str", "end_time_str", "location", "name"] } // 1900-0330 PA: Axs
 };
 
 let userShiftsDict = {}
 
 class Shift {
   constructor(startDateTime, endDateTime, location, name, overnight = false) {
+    this.dateStr = startDateTime.toISOString();
     this.startDateTime = startDateTime;
     this.endDateTime = endDateTime;
     this.location = location;
@@ -22,21 +23,11 @@ class Shift {
     this.providerType = providerType;
   }
 
-  add_to_calendar() {
-    // TODO: use google calendar api to create events
-    // TODO: catch overnight shifts here
-  }
-
-  // hardcoded for PST
-  get_utc_to_local_isostring(date) {
-    const isostring = new Date(date - new Date().getTimezoneOffset(8) * 60000).toISOString()
-    return isostring.replace('Z', '-08:00');
-  }
-
   get_json() {
     return {
-      "startDateTime": this.get_utc_to_local_isostring(this.startDateTime),
-      "endDateTime": this.get_utc_to_local_isostring(this.endDateTime),
+      "dateStr": this.dateStr,
+      "startDateTime": this.startDateTime.toISOString(),
+      "endDateTime": this.endDateTime.toISOString(),
       "location": this.location,
       "overnight": this.overnight,
       "providerType": this.providerType,
@@ -54,8 +45,8 @@ class Shift {
 
     console.log(`${prefix}${this.providerName}`);
     console.log(this.location);
-    console.log(this.get_utc_to_local_isostring(this.startDateTime, 8));
-    console.log(this.get_utc_to_local_isostring(this.endDateTime, 8));
+    console.log(this.this.startDateTime);
+    console.log(this.endDateTime);
     console.log(" ");
   }
 }
@@ -71,11 +62,12 @@ function parseEvent(elem, month, year) {
   const day = dayElement.textContent;
 
   let info = {};
-  let patternKey = 0;
+  let match = null;
   for (const [key, { pattern, groupNames }] of Object.entries(patterns)) {
-    patternKey = key;
-    const match = elem.textContent.match(pattern);
+    match = elem.textContent.match(pattern);
     if (match) {
+      // populate info with match info
+      // console.log("Got match:", match[0])
       info = groupNames.reduce((acc, name, i) => {
         acc[name] = match[i + 1];
         return acc;
@@ -84,9 +76,8 @@ function parseEvent(elem, month, year) {
     }
   }
 
-  if (patternKey === 0) {
-    console.log("Event does not match.");
-    console.log(elem.textContent);
+  if (match === null) {
+    // console.log("Event does not match:", elem.textContent);
     return undefined;
   }
 
@@ -107,7 +98,7 @@ function parseEvent(elem, month, year) {
   }
 
   // get month
-  const monthNumber = new Date(month + " 1, 2021").getMonth();
+  const monthNumber = new Date(`${month} ${day}, ${year}`).getMonth();
   const startDateTime = new Date(
     parseInt(year),
     monthNumber,
@@ -186,19 +177,18 @@ function scrapeProvider(localStorage, providerType) {
   // parse shift elements
   const shifts = [];
   for (const elem of elements) {
-    // start time always aligns with axs
     const shift = parseEvent(elem, month, year);
-    if (providerType === PROVIDER_ENUM.PA) {
-      shift.location = "PA";
-    }
-
     if (shift !== undefined) {
-      const dateStr = shift.get_utc_to_local_isostring(shift.startDateTime)
-      const userShift = localStorage["shifts"][dateStr];
-      if (userShift !== undefined && userShift["location"] === shift.location) {
+      // TODO: check if event overlaps with any user shifts instead of checking location
+      if (providerType === PROVIDER_ENUM.PA) {
+        shift.location = "PA";
+      }
+      
+      let userShift = localStorage["shifts"][shift.dateStr];
+      if (userShift !== undefined && userShift.location == shift.location) {
         shifts.push(shift);
-        localStorage["shifts"][dateStr]["providerName"] = shift.name;
-        localStorage["shifts"][dateStr]["providerType"] = providerType;
+        localStorage["shifts"][shift.dateStr]["providerName"] = shift.name;
+        localStorage["shifts"][shift.dateStr]["providerType"] = providerType;
       }
     }
   }

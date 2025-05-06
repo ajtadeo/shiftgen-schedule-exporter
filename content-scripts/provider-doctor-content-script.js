@@ -7,7 +7,7 @@ async function main() {
     return FAILURE;
   }
 
-  const [shifts, updatedLocalStorage] = scrapeProvider(localStorage, PROVIDER_ENUM.DOCTOR);
+  const updatedLocalStorage = scrapeDoctor(localStorage);
 
   await chrome.storage.local.set({
     "shifts": updatedLocalStorage["shifts"],

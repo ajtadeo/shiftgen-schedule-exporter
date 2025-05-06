@@ -11,8 +11,8 @@ const SCRAPING_STATUS_ENUM = {
     INACTIVE: 0,
     STARTING: 1,
     USER: 2,
-    PA: 3,
-    DOCTOR: 4,
+    DOCTOR: 3,
+    PA: 4
 }
 
 const SITE_ID_ENUM = {

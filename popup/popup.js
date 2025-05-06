@@ -57,8 +57,8 @@ window.onload = async function () {
   const template = document.querySelector("#shift-template");
   for (const [key, value] of Object.entries(shifts)) {
     const clone = template.content.cloneNode(true);
-    clone.querySelector(".shift-start").textContent = new Date(value.startDateTime).toLocaleString();
-    clone.querySelector(".shift-end").textContent = new Date(value.endDateTime).toLocaleString();
+    clone.querySelector(".shift-start").textContent = new Date(value.startTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false });
+    clone.querySelector(".shift-end").textContent = new Date(value.endTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false });
     clone.querySelector(".shift-location").textContent = value.location;
     clone.querySelector(".shift-provider-name").textContent = value.providerName;
 
@@ -166,16 +166,15 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
  * }
  */
 function exportToGoogleCalendar(token, calendarId, shift) {
-  console.log(shift)
   let event = {
     summary: `CHOC Scribe: ${shift.location} ${shift.providerName}`,
     description: 'Generated using ShiftGen Calendar!',
     start: {
-      'dateTime': shift.startDateTime,
+      'dateTime': new Date(startTime).toISOString(),
       'timeZone': 'America/Los_Angeles'
     },
     end: {
-      'dateTime': shift.endDateTime,
+      'dateTime': new Date(endTime).toISOString(),
       'timeZone': 'America/Los_Angeles'
     }
   };

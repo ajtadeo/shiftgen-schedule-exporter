@@ -7,15 +7,14 @@ const patterns = {
 let userShiftsDict = {}
 
 class Shift {
-  constructor(startDateTime, endDateTime, location, name, overnight = false) {
-    this.dateStr = startDateTime.toISOString();
-    this.startDateTime = startDateTime;
-    this.endDateTime = endDateTime;
-    this.location = location;
-    this.overnight = overnight;
-    this.name = name;
-    this.providerType = PROVIDER_ENUM.UNKNOWN;
-    this.providerName = "";
+  constructor(startTime, endTime, location, name, overnight = false) {
+    this.startTime = startTime;                // epoch seconds (int)
+    this.endTime = endTime;                    // epoch seconds (int)
+    this.location = location;                  // string
+    this.overnight = overnight;                // bool
+    this.name = name;                          // string
+    this.providerType = PROVIDER_ENUM.UNKNOWN; // int
+    this.providerName = "";                    // string
   }
 
   set_provider(providerName, providerType) {
@@ -25,9 +24,8 @@ class Shift {
 
   get_json() {
     return {
-      "dateStr": this.dateStr,
-      "startDateTime": this.startDateTime.toISOString(),
-      "endDateTime": this.endDateTime.toISOString(),
+      "startTime": this.startTime,
+      "endTime": this.endTime,
       "location": this.location,
       "overnight": this.overnight,
       "providerType": this.providerType,
@@ -45,12 +43,36 @@ class Shift {
 
     console.log(`${prefix}${this.providerName}`);
     console.log(this.location);
-    console.log(this.this.startDateTime);
-    console.log(this.endDateTime);
+    console.log(this.startTime);
+    console.log(this.endTime);
     console.log(" ");
   }
 }
 
+/**
+ * Calculates the overlap in milliseconds between two shifts.
+ * 
+ * @param {Shift} shift Provider shift
+ * @param {Shift} userShift User's shift
+ * 
+ * @returns Length in milliseconds of the overlap. 0 if no overlap exists
+ */
+function getOverlap(shift, userShift) {
+
+  let overlapStart = Math.max(userShift.startTime, shift.startTime);
+  let overlapEnd = Math.min(userShift.endTime, shift.endTime);
+  let overlapLength = Math.max(0, overlapEnd - overlapStart);
+
+  return overlapLength;
+}
+
+/**
+ * Parses an event in the ShiftGen printout calendar into a Shift object
+ * @param {Node} elem HTML Node to parse
+ * @param {String} month Target month
+ * @param {String} year Target year
+ * @returns A Shift object
+ */
 function parseEvent(elem, month, year) {
   const dayElement = document.evaluate(
     "./preceding-sibling::div[1]",
@@ -99,7 +121,7 @@ function parseEvent(elem, month, year) {
 
   // get month
   const monthNumber = new Date(`${month} ${day}, ${year}`).getMonth();
-  const startDateTime = new Date(
+  const startTime = new Date(
     parseInt(year),
     monthNumber,
     parseInt(day),
@@ -133,14 +155,18 @@ function parseEvent(elem, month, year) {
   }
 
   return new Shift(
-    startDateTime,
-    endDateTime,
-    info["location"],
-    info["name"],
+    startTime.getTime(),
+    endDateTime.getTime(),
+    info["location"].trim().toUpperCase(),
+    info["name"].trim(),
     overnight
   );
 }
 
+/**
+ * Scrapes the user's ShiftGen printout calendar
+ * @returns Array of Shift objects
+ */
 function scrapeUser() {
   // get month and year
   const monthYearElement = document.querySelector("div:first-of-type > div:first-of-type");
@@ -156,7 +182,6 @@ function scrapeUser() {
   for (const elem of elements) {
     const shift = parseEvent(elem, month, year);
     if (shift !== undefined) {
-      userShiftsDict[shift.startDateTime] = shift;
       shifts.push(shift);
     }
   }
@@ -164,34 +189,131 @@ function scrapeUser() {
   return shifts;
 }
 
-function scrapeProvider(localStorage, providerType) {
+/**
+ * Scrapes a Doctor's ShiftGen printout calendar
+ * 
+ * @param {Object} localStorage Chrome local storage object containing the "shifts" key
+ * 
+ * @returns Array of provider shifts scraped from the page, and the local storage
+ * object updated with provider information.
+ */
+function scrapeDoctor(localStorage) {
   // get month and year
   const monthYearElement = document.querySelector("div:first-of-type > div:first-of-type");
   const match = monthYearElement.textContent.match(/(\w+)\s(\d{4})/);
   const month = match[1];
   const year = match[2];
 
-  // get all shift elements
+  // get and parse all shift elements
   const elements = document.querySelectorAll("td > span");
-
-  // parse shift elements
-  const shifts = [];
+  let shifts = [];
   for (const elem of elements) {
     const shift = parseEvent(elem, month, year);
     if (shift !== undefined) {
-      // TODO: check if event overlaps with any user shifts instead of checking location
-      if (providerType === PROVIDER_ENUM.PA) {
-        shift.location = "PA";
-      }
-      
-      let userShift = localStorage["shifts"][shift.dateStr];
-      if (userShift !== undefined && userShift.location == shift.location) {
-        shifts.push(shift);
-        localStorage["shifts"][shift.dateStr]["providerName"] = shift.name;
-        localStorage["shifts"][shift.dateStr]["providerType"] = providerType;
-      }
+      shifts.push(shift);
     }
   }
 
-  return [shifts, localStorage];
+  const userShifts = Object.values(localStorage["shifts"])
+
+  // find overlapping user shifts
+  for (const userShift of userShifts) {
+
+    // don't find overlaps for shifts that have already been claimed
+    if (userShift.providerName !== "") {
+      continue;
+    }
+
+    let maxOverlap = 0;
+    let maxOverlapShift = undefined;
+
+    for (const shift of shifts) {
+      // doctor shifts occur in the same location as the user
+      if (userShift.location === shift.location) {
+        let overlap = getOverlap(userShift, shift)
+        if (overlap > maxOverlap) {
+          console.log(overlap, shift)
+          maxOverlap = overlap;
+          maxOverlapShift = shift;
+        }
+      }
+    }
+
+    if (maxOverlapShift !== undefined) {
+      localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.name;
+      localStorage["shifts"][userShift.startTime]["providerType"] = PROVIDER_ENUM.DOCTOR;
+    }
+  }
+
+  return localStorage;
 }
+
+/**
+ * Scrapes a PA's ShiftGen printout calendar
+ * @param {Object} localStorage Chrome local storage object containing the "shifts" key
+ * @returns Array of provider shifts scraped from the page, and the local storage
+ * object updated with provider information.
+ */
+function scrapePA(localStorage) {
+  // get month and year
+  const monthYearElement = document.querySelector("div:first-of-type > div:first-of-type");
+  const match = monthYearElement.textContent.match(/(\w+)\s(\d{4})/);
+  const month = match[1];
+  const year = match[2];
+
+  // get and parse all shift elements
+  const elements = document.querySelectorAll("td > span");
+  let shifts = [];
+  for (const elem of elements) {
+    const shift = parseEvent(elem, month, year);
+    if (shift !== undefined) {
+      shifts.push(shift);
+    }
+  }
+
+  const userShifts = Object.values(localStorage["shifts"])
+
+  // find overlapping user shifts
+  for (const userShift of userShifts) {
+
+    // don't find overlaps for shifts that have already been claimed
+    if (userShift.providerName !== "") {
+      continue;
+    }
+
+    let maxOverlap = 0;
+    let maxOverlapShift = undefined;
+
+    for (const shift of shifts) {
+      // PA shifts do not have a location
+      let overlap = getOverlap(userShift, shift)
+      if (overlap > maxOverlap) {
+        console.log(overlap, shift)
+        maxOverlap = overlap;
+        maxOverlapShift = shift;
+      }
+    }
+
+    if (maxOverlapShift !== undefined) {
+      localStorage["shifts"][userShift.startTime]["location"] = "PA";
+      localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.name;
+      localStorage["shifts"][userShift.startTime]["providerType"] = PROVIDER_ENUM.PA;
+    }
+  }
+
+  return localStorage;
+}
+
+// TODO: maybe sort shifts by time to be more optimized?
+// sort by start time
+// sortedUserShifts.sort((a, b) => {
+//   let aStart = new Date(a.startTime);
+//   let bStart = new Date(b.startTime)
+//   if (aStart < bStart) {
+//     return -1;
+//   } else if (aStart === bStart) {
+//     return 0;
+//   } else if (aStart > bStart) {
+//     return 1;
+//   }
+// })

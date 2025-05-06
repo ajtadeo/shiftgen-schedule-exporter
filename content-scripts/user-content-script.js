@@ -4,11 +4,11 @@ async function main() {
   // scrape page
   shifts = scrapeUser();
 
-  // update local storage with new shift info. startDateTime is the unique key
+  // update local storage with new shift info. startTime is the unique key
   let localStorage = await chrome.storage.local.get(["shifts"])
   for (const wd of shifts) {
     const wd_json = wd.get_json();
-    localStorage["shifts"][wd_json.dateStr] = wd_json;
+    localStorage["shifts"][wd_json.startTime] = wd_json;
   }
 
   await chrome.storage.local.set({

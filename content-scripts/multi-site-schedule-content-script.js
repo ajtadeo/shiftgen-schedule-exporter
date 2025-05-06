@@ -18,14 +18,14 @@ window.onload = async function () {
       select.value = SITE_ID_ENUM.USER;
       form.submit(); // redirects to shiftgen.com/member/multi_site_schedule
     } else if (scrapingStatus === SCRAPING_STATUS_ENUM.USER) {
+      await chrome.storage.local.set({ scraping_status: SCRAPING_STATUS_ENUM.DOCTOR }); 
+      select.value = SITE_ID_ENUM.DOCTOR;
+      form.submit(); // redirects to shiftgen.com
+    } else if (scrapingStatus === SCRAPING_STATUS_ENUM.DOCTOR) {
       await chrome.storage.local.set({ scraping_status: SCRAPING_STATUS_ENUM.PA });
       select.value = SITE_ID_ENUM.PA;
       form.submit(); // redirects to shiftgen.com
     } else if (scrapingStatus === SCRAPING_STATUS_ENUM.PA) {
-      await chrome.storage.local.set({ scraping_status: SCRAPING_STATUS_ENUM.DOCTOR });
-      select.value = SITE_ID_ENUM.DOCTOR;
-      form.submit(); // redirects to shiftgen.com
-    } else if (scrapingStatus === SCRAPING_STATUS_ENUM.DOCTOR) {
       await chrome.storage.local.set({
         scraping_status: SCRAPING_STATUS_ENUM.INACTIVE,
         redirect_to_print_page: false,

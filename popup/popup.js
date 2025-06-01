@@ -100,11 +100,12 @@ window.onload = async function () {
   
   // handle target month form submission
   if (localStorage.target_month !== "") {
-    document.querySelector("#target-month-input").value = localStorage.target_month;
+    document.querySelector("#target-month-select").value = localStorage.target_month;
   }
+
   document.querySelector("#target-month-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const targetMonth = document.getElementById("target-month-input").value.toLowerCase();
+    const targetMonth = document.getElementById("target-month-select").value;
   
     await chrome.storage.local.set({ "target_month": targetMonth }, function() {
       if (chrome.runtime.lastError) {

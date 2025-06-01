@@ -27,7 +27,21 @@
         <tr>
           <form id="target-month-form">
             <th><h3>Target Month: </h3></th>
-            <td><input type="text" id="target-month-input" placeholder="Enter Target Month" required /></td>
+            <td><select name="target-month-select" id="target-month-select" required>
+              <option disabled selected value="">Enter Target Month</option>
+              <option value="January">January</option>
+              <option value="February">February</option>
+              <option value="March">March</option>
+              <option value="April">April</option>
+              <option value="May">May</option>
+              <option value="June">June</option>
+              <option value="July">July</option>
+              <option value="August">August</option>
+              <option value="September">September</option>
+              <option value="October">October</option>
+              <option value="November">November</option>
+              <option value="December">December</option>
+            </select></td>
             <td><button type="submit" id="target-month-button">Save</button></td>
             <td class="settings-message"><p id="target-month-message">Saved</p></td>
           </form>

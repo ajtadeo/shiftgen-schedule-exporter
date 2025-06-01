@@ -4,13 +4,14 @@ body {
   font-family: Calibri, "Lucida Grande";
 }
 
-input, button {
+input, button, select {
   font-family: Calibri, "Lucida Grande";
   border: solid #A16D13 1px;
   border-radius: 5px;
 }
 
-input {
+input, select {
+  width: 100%;
   cursor: pointer;
 }
 

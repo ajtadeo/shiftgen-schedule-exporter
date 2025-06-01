@@ -1,18 +1,34 @@
-# shiftgen-calendar
-Chrome extension to export shifts from ShiftGen to Google Calendar
+# ShiftGen Calendar
+Chrome extension to assist medical staff in exporting shift data with extra information about the provider on staff from ShiftGen to Google Calendar.
+
+## Installation
+Since this Chrome extension is still in development, users must install this extension through the extension developer mode by cloning the repository and loading the unpacked extension in [chrome://extensions/](chrome://extensions/). Current implementation with the Google Calendar API is currently limited to test users.
+
+![Installation](images/installation.png)
 
 ## Usage
-1. Login to [https://shiftgen.com](https://shiftgen.com) and navigate to `Schedules > All Schedules`
 
-![Open All Schedules](./images/open_all_schedules.png)
+To use this extension, first open the extension's popup and configure the settings.
 
-2. For the month you want to create events for, select `My Schedule Only` under `Shifts to Print`, then click `Create Print Version`
+* Target Month: The month of the current year to be processed
+* Calendar ID: The Google Calendar ID where the processed shifts will be exported to. To find this value, navigate to the settings page of your Google Calendar, navigate to the "Integrate calendar" subsection, and copy "Calendar ID" value into the extension popup.
 
-![Set print options and create print version](./images/create_print_version.png)
+![Configure settings](images/configure_settings.png)
 
-3. In the extension popup, click `Scrape My Schedule`
+After the settings have been configured, login to [https://shiftgen.com](https://shiftgen.com) and click "Scrape ShiftGen Schedule" to gather all shift data and provider information. This process will open new tabs in your browser as the extension navigates to different pages within ShiftGen. When you get a popup saying "Done processing shifts. Navigate to ShiftGen Popup to export to Google Calendar!" the processing is complete and you may close any open ShiftGen tabs. 
 
-## Automated Scraping Process
+<!-- TODO: add picture of popup -->
+
+Open the extension popup to examine the processed shift data. To export the data to Google Calendar, simply click the "Export to Google Calendar" button.
+
+<!-- TODO: add picture of extension after processing shifts -->
+
+## Known Bugs
+
+* On slow computers, shift processing will fail because web scraping takes too long. A better messaging architecture to indicate user/provider schedule scraping complete should be implemented to avoid moving onto the next schedule before data has been saved to the local storage. One workaround is to close all Chrome tabs other than https://shiftgen.com when processing shifts.
+* ShiftGen recently updated their UI in May 2025 which deprecates this codebase. A refactor is required to work with their new page structure and navigation.
+
+<!-- ## Automated Scraping Process
 1. Click "Scrape" button in popup, sets scraping flag to true
 2. popup opens a new tab at [https://www.shiftgen.com/member/schedule](https://www.shiftgen.com/member/schedule), and saves TAB_ID
 3. Submit POST request to change site to USER
@@ -23,9 +39,9 @@ Chrome extension to export shifts from ShiftGen to Google Calendar
    <option value="80" selected="selected">St Joseph/CHOC Physician</option></select>
 </form>
 ```
-4. Page redirects to [https://www.shiftgen.com/member/multi_site_schedule](https://www.shiftgen.com/member/multi_site_schedule)
-5. In content scripts for [https://www.shiftgen.com/member/multi_site_schedule](https://www.shiftgen.com/member/multi_site_schedule), check scraping flag and if true redirect to [https://www.shiftgen.com/member/schedule](https://www.shiftgen.com/member/schedule)
-6. Find table with thead containing the selected Month, set "My Schedule Only" input to true, and click "Create Print Version"
+1. Page redirects to [https://www.shiftgen.com/member/multi_site_schedule](https://www.shiftgen.com/member/multi_site_schedule)
+2. In content scripts for [https://www.shiftgen.com/member/multi_site_schedule](https://www.shiftgen.com/member/multi_site_schedule), check scraping flag and if true redirect to [https://www.shiftgen.com/member/schedule](https://www.shiftgen.com/member/schedule)
+3. Find table with thead containing the selected Month, set "My Schedule Only" input to true, and click "Create Print Version"
 ```html
 <div class="col-md-6">
   <form action="/member/schedule" method="post">
@@ -80,5 +96,5 @@ Chrome extension to export shifts from ShiftGen to Google Calendar
 </div>
 ```
 
-7. Page redirects to USER print view
-8. Scrape page, then redirect to [https://www.shiftgen.com/member/schedule](https://www.shiftgen.com/member/schedule)
+1. Page redirects to USER print view
+2. Scrape page, then redirect to [https://www.shiftgen.com/member/schedule](https://www.shiftgen.com/member/schedule) -->

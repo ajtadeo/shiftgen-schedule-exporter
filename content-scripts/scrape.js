@@ -1,56 +1,16 @@
+/**
+ * @file scrape.js
+ * @brief Web scraping functions for gathering data about user and provider shifts.
+ */
+
 const patterns = {
   1: { pattern: /^(?!SJH)(?!PIT)(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4}):\s((?:\w|\*)+)$/, groupNames: ["location", "start_time_str", "end_time_str", "name"] }, // North 2130-0600: Physician
   2: { pattern: /^(\d{2}|\d{4})-(\d{2}|\d{4})\s\((\w+)\):\s((?:\w|\*)+)$/, groupNames: ["start_time_str", "end_time_str", "location", "name"] }, // 1700-0100 (RED): Axs
   3: { pattern: /^(\d{2}|\d{4})-(\d{2}|\d{4})\s(\w+):\s((?:\w|\*)+)$/, groupNames: ["start_time_str", "end_time_str", "location", "name"] } // 1900-0330 PA: Axs
 };
 
-let userShiftsDict = {}
-
-class Shift {
-  constructor(startTime, endTime, location, name, overnight = false) {
-    this.startTime = startTime;                // epoch seconds (int)
-    this.endTime = endTime;                    // epoch seconds (int)
-    this.location = location;                  // string
-    this.overnight = overnight;                // bool
-    this.name = name;                          // string
-    this.providerType = PROVIDER_ENUM.UNKNOWN; // int
-    this.providerName = "";                    // string
-  }
-
-  set_provider(providerName, providerType) {
-    this.providerName = providerName;
-    this.providerType = providerType;
-  }
-
-  get_json() {
-    return {
-      "startTime": this.startTime,
-      "endTime": this.endTime,
-      "location": this.location,
-      "overnight": this.overnight,
-      "providerType": this.providerType,
-      "providerName": this.providerName
-    }
-  }
-
-  print() {
-    let prefix = "";
-    if (this.providerType === PROVIDER_ENUM.DOCTOR) {
-      prefix = "DR ";
-    } else if (this.providerType === PROVIDER_ENUM.PA) {
-      prefix = "PA/NP ";
-    }
-
-    console.log(`${prefix}${this.providerName}`);
-    console.log(this.location);
-    console.log(this.startTime);
-    console.log(this.endTime);
-    console.log(" ");
-  }
-}
-
 /**
- * Calculates the overlap in milliseconds between two shifts.
+ * @brief Calculates the overlap in milliseconds between two shifts.
  * 
  * @param {Shift} shift Provider shift
  * @param {Shift} userShift User's shift
@@ -58,19 +18,19 @@ class Shift {
  * @returns Length in milliseconds of the overlap. 0 if no overlap exists
  */
 function getOverlap(shift, userShift) {
-
   let overlapStart = Math.max(userShift.startTime, shift.startTime);
   let overlapEnd = Math.min(userShift.endTime, shift.endTime);
   let overlapLength = Math.max(0, overlapEnd - overlapStart);
-
   return overlapLength;
 }
 
 /**
- * Parses an event in the ShiftGen printout calendar into a Shift object
+ * @brief Parses an event in the ShiftGen printout calendar into a Shift object
+ * 
  * @param {Node} elem HTML Node to parse
  * @param {String} month Target month
  * @param {String} year Target year
+ * 
  * @returns A Shift object
  */
 function parseEvent(elem, month, year) {
@@ -164,7 +124,8 @@ function parseEvent(elem, month, year) {
 }
 
 /**
- * Scrapes the user's ShiftGen printout calendar
+ * @brief Scrapes the user's ShiftGen printout calendar
+ * 
  * @returns Array of Shift objects
  */
 function scrapeUser() {
@@ -190,7 +151,7 @@ function scrapeUser() {
 }
 
 /**
- * Scrapes a Doctor's ShiftGen printout calendar
+ * @brief Scrapes a Doctor's ShiftGen printout calendar
  * 
  * @param {Object} localStorage Chrome local storage object containing the "shifts" key
  * 
@@ -249,8 +210,10 @@ function scrapeDoctor(localStorage) {
 }
 
 /**
- * Scrapes a PA's ShiftGen printout calendar
+ * @brief Scrapes a PA's ShiftGen printout calendar
+ * 
  * @param {Object} localStorage Chrome local storage object containing the "shifts" key
+ * 
  * @returns Array of provider shifts scraped from the page, and the local storage
  * object updated with provider information.
  */

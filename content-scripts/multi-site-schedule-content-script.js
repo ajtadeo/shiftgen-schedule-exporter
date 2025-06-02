@@ -1,7 +1,15 @@
+/**
+ * @file multi-site-schedule-content-script.js
+ * @brief Content script for https://shiftgen.com/member/multi_site_schedule web page.
+ */
+
+/**
+ * @brief When scraping status isn't inactive, routes redirects based on the current scraping status.
+ */
 window.onload = async function () {
-  let localStorage = await chrome.storage.local.get(["scraping_status", "redirect_to_print_page"]);
-  let scrapingStatus = localStorage.scraping_status;
-  let redirectToPrintPage = localStorage.redirect_to_print_page
+  const localStorage = await chrome.storage.local.get(["scraping_status", "redirect_to_print_page"]);
+  const scrapingStatus = localStorage.scraping_status;
+  const redirectToPrintPage = localStorage.redirect_to_print_page
 
   if (scrapingStatus !== SCRAPING_STATUS_ENUM.INACTIVE && redirectToPrintPage) {
     // for edge case with USER, manually redirect to member/schedule

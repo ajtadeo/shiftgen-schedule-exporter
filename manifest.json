@@ -24,14 +24,14 @@
       "matches": ["https://www.shiftgen.com/login", "https://shiftgen.com/login"]
     },
     {
-      "js": ["global.js", "content-scripts/scrape.js", "content-scripts/user-content-script.js"],
+      "js": ["global.js", "content-scripts/shift.js", "content-scripts/scrape.js", "content-scripts/user-content-script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*",
         "https://shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*"
       ]
     },
     {
-      "js": ["global.js", "content-scripts/scrape.js", "content-scripts/provider-doctor-content-script.js"],
+      "js": ["global.js", "content-scripts/shift.js","content-scripts/scrape.js", "content-scripts/provider-doctor-content-script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=199*shift_group_id_array%5B%5D=578*",
         "https://shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=199*shift_group_id_array%5B%5D=578*"
@@ -39,7 +39,7 @@
 
     },
     {
-      "js": ["global.js", "content-scripts/scrape.js", "content-scripts/provider-pa-content-script.js"],
+      "js": ["global.js", "content-scripts/shift.js","content-scripts/scrape.js", "content-scripts/provider-pa-content-script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=211*shift_group_id_array%5B%5D=212*",
         "https://shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=211*shift_group_id_array%5B%5D=212*"

@@ -1,6 +1,14 @@
+/**
+ * @file shiftgen-login-content-script.js
+ * @brief Content script for https://shiftgen.com/login web page.
+ */
+
+/**
+ * @brief When scraping status isn't inactive, resets scraping local variables.
+ */
 window.onload = async function () {
-  let localStorage = await chrome.storage.local.get(["scraping_status"]);
-  let scrapingStatus = localStorage.scraping_status;
+  const localStorage = await chrome.storage.local.get(["scraping_status"]);
+  const scrapingStatus = localStorage.scraping_status;
 
   if (scrapingStatus !== SCRAPING_STATUS_ENUM.INACTIVE) {
     // reset local variables

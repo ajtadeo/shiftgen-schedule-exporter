@@ -1,5 +1,7 @@
-const SUCCESS = 0;
-const FAILURE = 1;
+/**
+ * @file global.js
+ * @brief Global variables and objects used in the extension.
+ */
 
 const PROVIDER_ENUM = {
     UNKNOWN: 0,
@@ -111,5 +113,3 @@ const TEST_SHIFTS = {
       "startDateTime": "2025-03-30T20:30:00.000-08:00"
   }
 }
-
-// export default { SCRAPING_STATUS_ENUM };

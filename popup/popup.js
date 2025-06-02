@@ -1,3 +1,8 @@
+/**
+ * @file popup.js
+ * @brief JavaScript for extension popup.
+ */
+
 window.onload = async function () {
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
@@ -129,9 +134,9 @@ window.onload = async function () {
     });
 
     const tbody = document.querySelector("#shift-tbody");
-    const data_rows = tbody.querySelectorAll('tr:has(td)');
-    for (let i = 0; i < data_rows.length; i++) {
-      tbody.removeChild(data_rows[i]);
+    const dataRows = tbody.querySelectorAll('tr:has(td)');
+    for (let i = 0; i < dataRows.length; i++) {
+      tbody.removeChild(dataRows[i]);
     }
 
   })
@@ -141,11 +146,11 @@ window.onload = async function () {
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   // fetch local storage variables 
   let localStorage = await chrome.storage.local.get(["user_shifts_set", "doctor_shifts_set", "pa_shifts_set"]);
-  let user_shifts_set = localStorage.user_shifts_set
-  let doctor_shifts_set = localStorage.doctor_shifts_set
-  let pa_shifts_set = localStorage.pa_shifts_set
+  let userShiftsSet = localStorage.user_shifts_set
+  let doctorShiftsSet = localStorage.doctor_shifts_set
+  let paShiftsSet = localStorage.pa_shifts_set
 
-  if (user_shifts_set & pa_shifts_set & doctor_shifts_set) {
+  if (userShiftsSet & doctorShiftsSet & paShiftsSet) {
     document.querySelector("#google-calendar-export-button").disabled = false;
   }
 });

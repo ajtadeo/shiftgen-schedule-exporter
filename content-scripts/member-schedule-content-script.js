@@ -1,7 +1,16 @@
+/**
+ * @file member-schedule-content-script.js
+ * @brief Content script for https://shiftgen.com/member/schedule web page.
+ */
+
+/**
+ * @brief When the scraping status isn't inactive, opens schedules in print view for the current target month,
+ * then redirects to https://www.shiftgen.com/member/multi_site_schedule.
+ */
 window.onload = async function () {
-  let localStorage = await chrome.storage.local.get(["scraping_status", "target_month"]);
-  let scrapingStatus = localStorage.scraping_status;
-  let targetMonth = localStorage.target_month
+  const localStorage = await chrome.storage.local.get(["scraping_status", "target_month"]);
+  const scrapingStatus = localStorage.scraping_status;
+  const targetMonth = localStorage.target_month
 
   if (scrapingStatus !== SCRAPING_STATUS_ENUM.INACTIVE) {
     // get all forms associated with the target month
@@ -27,6 +36,5 @@ window.onload = async function () {
     // TODO: wait to check status before redirecting? scripts may not be done yet
     await new Promise(r => setTimeout(r, 10)); // wait for storage to set correctly
     window.location.href = "https://www.shiftgen.com/member/multi_site_schedule";
-    
   }
 }

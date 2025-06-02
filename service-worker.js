@@ -1,3 +1,11 @@
+/**
+ * @file service-worker.js
+ * @brief Extension service worker.
+ */
+
+/**
+ * @brief Listener that initializes local storage variables on extension install and update.
+ */
 chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason == "install" || details.reason == "update") {
     // set local storage variables
@@ -14,9 +22,12 @@ chrome.runtime.onInstalled.addListener(function (details) {
   }
 })
 
-// TODO: if  user and pa messages come in at the same time, then the request gets overwritten
-// and the user tab will not close. maybe the problem is somewhere else?
+/**
+ * @brief Listener that closes the current tab on "closeCurrentTab" message
+ */
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  // TODO: if  user and pa messages come in at the same time, then the request gets overwritten
+  // and the user tab will not close. maybe the problem is somewhere else?
   if (request.action === "closeCurrentTab") {
     await chrome.tabs.remove(sender.tab.id);
   }

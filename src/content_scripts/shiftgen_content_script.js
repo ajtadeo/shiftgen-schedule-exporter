@@ -1,5 +1,5 @@
 /**
- * @file shiftgen-content-script.js
+ * @file shiftgen_content_script.js
  * @brief Content script for https://shiftgen.com web page.
  */
 

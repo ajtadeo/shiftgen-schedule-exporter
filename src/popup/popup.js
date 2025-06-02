@@ -174,7 +174,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 function exportToGoogleCalendar(token, calendarId, shift) {
   let event = {
     summary: `CHOC Scribe: ${shift.location} ${shift.providerName}`,
-    description: 'Generated using ShiftGen Calendar!',
+    description: 'Generated using Schedule Exporter for ShiftGen!',
     start: {
       'dateTime': new Date(startTime).toISOString(),
       'timeZone': 'America/Los_Angeles'

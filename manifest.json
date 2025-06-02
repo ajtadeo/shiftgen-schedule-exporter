@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "ShiftGen Calendar",
-  "description": "Exports shift data with extra information about the provider on staff from ShiftGen to Google Calendar.",
+  "name": "Schedule Exporter for ShiftGen",
+  "description": "Exports schedule with extra information about the provider on staff from ShiftGen to Google Calendar.",
   "version": "1.0",
   "icons": {
     "16": "public/icons/icon_16.png",

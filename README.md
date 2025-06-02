@@ -1,5 +1,5 @@
-# ShiftGen Calendar
-Chrome extension to assist medical staff in exporting shift data with extra information about the provider on staff from ShiftGen to Google Calendar.
+# Schedule Exporter for ShiftGen
+Chrome extension to assist medical staff in exporting schedule with extra information about the provider on staff from ShiftGen to Google Calendar.
 
 ## Installation
 Since this Chrome extension is still in development, users must install this extension through the extension developer mode by cloning the repository and loading the unpacked extension in [chrome://extensions/](chrome://extensions/). Current implementation with the Google Calendar API is currently limited to test users.

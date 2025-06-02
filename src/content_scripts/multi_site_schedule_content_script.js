@@ -1,5 +1,5 @@
 /**
- * @file multi-site-schedule-content-script.js
+ * @file multi_site_schedule_content_script.js
  * @brief Content script for https://shiftgen.com/member/multi_site_schedule web page.
  */
 

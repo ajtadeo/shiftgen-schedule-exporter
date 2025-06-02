@@ -1,5 +1,5 @@
 /**
- * @file member-schedule-content-script.js
+ * @file member_schedule_content_script.js
  * @brief Content script for https://shiftgen.com/member/schedule web page.
  */
 

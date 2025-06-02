@@ -1,5 +1,5 @@
 /**
- * @file user-content-script.js
+ * @file user_content_script.js
  * @brief Content script for user schedule web page.
  */
 

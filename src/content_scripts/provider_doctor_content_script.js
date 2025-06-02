@@ -1,5 +1,5 @@
 /**
- * @file provider-doctor-content-script.js
+ * @file provider_doctor_content_script.js
  * @brief Content script for doctor schedule web pages.
  */
 

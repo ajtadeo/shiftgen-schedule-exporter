@@ -1,5 +1,5 @@
 /**
- * @file provider-pa-content-script.js
+ * @file provider_pa_content_script.js
  * @brief Content script for PA schedule web pages.
  */
 

@@ -1,37 +1,43 @@
 {
   "manifest_version": 3,
   "name": "ShiftGen Calendar",
-  "description": "Exports ShiftGen shifts with overlapping doctor/PA names to Google Calendar.",
+  "description": "Exports shift data with extra information about the provider on staff from ShiftGen to Google Calendar.",
   "version": "1.0",
+  "icons": {
+    "16": "public/icons/icon_16.png",
+    "32": "public/icons/icon_32.png",
+    "48": "public/icons/icon_48.png",
+    "128": "public/icons/icon_128.png"
+  },
   "background": {
-    "service_worker": "service-worker.js"
+    "service_worker": "src/service_worker.js"
   },
   "content_scripts": [
     {
-      "js": ["global.js", "content-scripts/multi-site-schedule-content-script.js"],
+      "js": ["src/global.js", "src/content_scripts/multi_site_schedule_content_script.js"],
       "matches": ["https://www.shiftgen.com/member/multi_site_schedule", "https://shiftgen.com/member/multi_site_schedule"]
     },
     {
-      "js": ["global.js", "content-scripts/member-schedule-content-script.js"],
+      "js": ["src/global.js", "src/content_scripts/member_schedule_content_script.js"],
       "matches": ["https://www.shiftgen.com/member/schedule", "https://shiftgen.com/member/schedule"]
     },
     {
-      "js": ["global.js", "content-scripts/shiftgen-content-script.js"],
+      "js": ["src/global.js", "src/content_scripts/shiftgen_content_script.js"],
       "matches": ["https://www.shiftgen.com/", "https://shiftgen.com/"]
     },
     {
-      "js": ["global.js", "content-scripts/shiftgen-login-content-script.js"],
+      "js": ["src/global.js", "src/content_scripts/shiftgen_login_content_script.js"],
       "matches": ["https://www.shiftgen.com/login", "https://shiftgen.com/login"]
     },
     {
-      "js": ["global.js", "content-scripts/shift.js", "content-scripts/scrape.js", "content-scripts/user-content-script.js"],
+      "js": ["src/global.js", "src/shiftgen_calendar/shift.js", "src/shiftgen_calendar/scrape.js", "src/content_scripts/user_content_script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*",
         "https://shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*"
       ]
     },
     {
-      "js": ["global.js", "content-scripts/shift.js","content-scripts/scrape.js", "content-scripts/provider-doctor-content-script.js"],
+      "js": ["src/global.js", "src/shiftgen_calendar/shift.js","src/shiftgen_calendar/scrape.js", "src/content_scripts/provider_doctor_content_script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=199*shift_group_id_array%5B%5D=578*",
         "https://shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=199*shift_group_id_array%5B%5D=578*"
@@ -39,7 +45,7 @@
 
     },
     {
-      "js": ["global.js", "content-scripts/shift.js","content-scripts/scrape.js", "content-scripts/provider-pa-content-script.js"],
+      "js": ["src/global.js", "src/shiftgen_calendar/shift.js","src/shiftgen_calendar/scrape.js", "src/content_scripts/provider_pa_content_script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=211*shift_group_id_array%5B%5D=212*",
         "https://shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=211*shift_group_id_array%5B%5D=212*"
@@ -47,7 +53,7 @@
     }
   ],
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "src/popup/popup.html"
   },
   "permissions": [
     "scripting",

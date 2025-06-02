@@ -4,7 +4,7 @@ Chrome extension to assist medical staff in exporting shift data with extra info
 ## Installation
 Since this Chrome extension is still in development, users must install this extension through the extension developer mode by cloning the repository and loading the unpacked extension in [chrome://extensions/](chrome://extensions/). Current implementation with the Google Calendar API is currently limited to test users.
 
-![Installation](images/installation.png)
+![Installation](public/images/installation.png)
 
 ## Usage
 
@@ -13,7 +13,7 @@ To use this extension, first open the extension's popup and configure the settin
 * Target Month: The month of the current year to be processed
 * Calendar ID: The Google Calendar ID where the processed shifts will be exported to. To find this value, navigate to the settings page of your Google Calendar, navigate to the "Integrate calendar" subsection, and copy "Calendar ID" value into the extension popup.
 
-![Configure settings](images/configure_settings.png)
+![Configure settings](public/images/configure_settings.png)
 
 After the settings have been configured, login to [https://shiftgen.com](https://shiftgen.com) and click "Scrape ShiftGen Schedule" to gather all shift data and provider information. This process will open new tabs in your browser as the extension navigates to different pages within ShiftGen. When you get a popup saying "Done processing shifts. Navigate to ShiftGen Popup to export to Google Calendar!" the processing is complete and you may close any open ShiftGen tabs. 
 

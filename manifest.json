@@ -30,14 +30,14 @@
       "matches": ["https://www.shiftgen.com/login", "https://shiftgen.com/login"]
     },
     {
-      "js": ["src/global.js", "src/shiftgen_calendar/shift.js", "src/shiftgen_calendar/scrape.js", "src/content_scripts/user_content_script.js"],
+      "js": ["src/global.js", "src/shiftgen/shift.js", "src/shiftgen/scrape.js", "src/content_scripts/user_content_script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*",
         "https://shiftgen.com/member/printable_schedule/*?*print_only_my_schedule=on*"
       ]
     },
     {
-      "js": ["src/global.js", "src/shiftgen_calendar/shift.js","src/shiftgen_calendar/scrape.js", "src/content_scripts/provider_doctor_content_script.js"],
+      "js": ["src/global.js", "src/shiftgen/shift.js","src/shiftgen/scrape.js", "src/content_scripts/provider_doctor_content_script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=199*shift_group_id_array%5B%5D=578*",
         "https://shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=199*shift_group_id_array%5B%5D=578*"
@@ -45,7 +45,7 @@
 
     },
     {
-      "js": ["src/global.js", "src/shiftgen_calendar/shift.js","src/shiftgen_calendar/scrape.js", "src/content_scripts/provider_pa_content_script.js"],
+      "js": ["src/global.js", "src/shiftgen/shift.js","src/shiftgen/scrape.js", "src/content_scripts/provider_pa_content_script.js"],
       "matches": [
         "https://www.shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=211*shift_group_id_array%5B%5D=212*",
         "https://shiftgen.com/member/printable_schedule/*?*shift_group_id_array%5B%5D=211*shift_group_id_array%5B%5D=212*"

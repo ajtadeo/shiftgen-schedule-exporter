@@ -1,4 +1,4 @@
-# Schedule Exporter for ShiftGen
+# ShiftGen Schedule Exporter
 Chrome extension to assist medical staff in exporting schedule with extra information about the provider on staff from ShiftGen to Google Calendar.
 
 ## Installation

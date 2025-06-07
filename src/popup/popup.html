@@ -5,6 +5,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Schedule Exporter for ShiftGen | Popup</title>
   <link rel="stylesheet" href="popup.css">
@@ -13,75 +14,96 @@
 <body>
   <div id="content">
 
-    <h2 id="title">Schedule Exporter for ShiftGen</h2>
-    <div class="button-container">
-      <button id="scrape-button">Scrape ShiftGen Schedule</button>
-      <button id="google-calendar-export-button" disabled>Export to Google Calendar</button>
-    </div>
-
-    <h2>Settings</h2>
     <table id="settings-table">
       <colgroup>
         <col span="1" style="width: 25%;">
         <col span="1" style="width: 60%;">
         <col span="1" style="width: 15%;">
         <col span="1" style="width: 5%;">
-     </colgroup>
-
+      </colgroup>
       <tbody>
         <tr>
           <form id="target-month-form">
-            <th><h3>Target Month: </h3></th>
+            <th>
+              <h3>Target Month: </h3>
+            </th>
             <td><select name="target-month-select" id="target-month-select" required>
-              <option disabled selected value="">Enter Target Month</option>
-              <option value="January">January</option>
-              <option value="February">February</option>
-              <option value="March">March</option>
-              <option value="April">April</option>
-              <option value="May">May</option>
-              <option value="June">June</option>
-              <option value="July">July</option>
-              <option value="August">August</option>
-              <option value="September">September</option>
-              <option value="October">October</option>
-              <option value="November">November</option>
-              <option value="December">December</option>
-            </select></td>
+                <option disabled selected value="">Enter Target Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+              </select></td>
             <td><button type="submit" id="target-month-button">Save</button></td>
-            <td class="settings-message"><p id="target-month-message">Saved</p></td>
+            <td class="settings-message">
+              <p id="target-month-message">Saved</p>
+            </td>
           </form>
         </tr>
-  
+
         <tr>
           <form id="calendar-id-form">
-            <th><h3>Calendar ID: </h3></th>
+            <th>
+              <h3>Calendar ID: </h3>
+            </th>
             <td><input type="text" id="calendar-id-input" placeholder="Enter Calendar ID" required /></td>
             <td><button type="submit" id="calendar-id-button">Save</button></td>
-            <td class="settings-message"><p id="calendar-id-message">Saved</p></td>
+            <td class="settings-message">
+              <p id="calendar-id-message">Saved</p>
+            </td>
           </form>
         </tr>
       </tbody>
     </table>
-  
-    <h2 id="shifts-header">Shifts</h2>
+
     <table id="shifts-table">
-      <tbody id="shift-tbody">
+      <thead id="shift-thead">
         <tr>
-          <th><h3>Start</h3></th>
-          <th><h3>End</h3></th>
-          <th><h3>Location</h3></th>
-          <th><h3>Provider</h3></th>
-          <th><h3>Type</h3></th>
-          <th><h3>Overnight?</h3></th>
+          <th>
+            <h3>Start</h3>
+          </th>
+          <th>
+            <h3>End</h3>
+          </th>
+          <th>
+            <h3>Location</h3>
+          </th>
+          <th>
+            <h3>Provider</h3>
+          </th>
+          <th>
+            <h3>Type</h3>
+          </th>
+          <th>
+            <h3>Overnight?</h3>
+          </th>
         </tr>
+      </thead>
+      <tbody id="shift-tbody">
       </tbody>
     </table>
+    <p id="no-shifts-message">No shifts to display</p>
 
     <button id="clear-shifts">Clear Shifts</button>
+  </div>
 
-    <hr/>
-    <p id="footer">For Axs &hearts;</p>
-  
+  <footer>
+      <div class="button-container">
+        <button id="scrape-button">Scrape ShiftGen Schedule</button>
+        <button id="google-calendar-export-button" disabled>Export to Google Calendar</button>
+      </div>
+
+      <p>For Axs &hearts;</p>
+    </footer>
+
     <template id="shift-template">
       <tr>
         <td class="shift-start"></td>
@@ -93,7 +115,6 @@
       </tr>
     </template>
 
-  </div>
   <script src="../global.js"></script>
   <script src="./popup.js"></script>
 </body>

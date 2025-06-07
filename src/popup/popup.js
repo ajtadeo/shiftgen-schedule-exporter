@@ -139,7 +139,17 @@ window.onload = async function () {
       tbody.removeChild(dataRows[i]);
     }
 
+    let noShiftsMessage = document.querySelector("#no-shifts-message")
+    noShiftsMessage.style.display = "block";
   })
+
+  // handle no shifts to display
+  let table = document.querySelector("#shifts-table");
+  let numRows = table.tBodies[0].rows.length;
+  if (numRows !== 0) {
+    let noShiftsMessage = document.querySelector("#no-shifts-message")
+    noShiftsMessage.style.display = "none";
+  }
 };
 
 // enable/disable scrape buttons based on status flags
@@ -207,5 +217,5 @@ function exportToGoogleCalendar(token, calendarId, shift) {
   }).catch(err => {
     console.error(err)
     return false;
-  })
+  });
 }

@@ -3,15 +3,27 @@
  * @brief Stylesheet for extension popup.
  */
 
+:root {
+  --primary-color: #F0C377;
+  --orange-border-color: #A16D13;
+  --orange-bg-color: #FCF5E9;
+  /* --orange-text-color: #474136; */
+  --grey-text-color: #696969;
+  --grey-bg-color: #e5e6e7;
+}
+
 body {
   width: 500px;
   text-align: center;
   font-family: Calibri, "Lucida Grande";
+  margin: 0;
+  padding: 0;
+  background-color: var(--primary-color);
 }
 
 input, button, select {
   font-family: Calibri, "Lucida Grande";
-  border: solid #A16D13 1px;
+  border: solid var(--orange-border-color) 1px;
   border-radius: 5px;
 }
 
@@ -21,17 +33,17 @@ input, select {
 }
 
 button {
-  background-color: #FCF5E9;
+  background-color: var(--orange-bg-color);
   font-weight: bold;
 }
 
 button:hover:not([disabled]) {
-  background-color: #F0C377;
+  color: var(--orange-bg-color);
+  background-color: var(--orange-border-color);
   cursor: pointer;
 }
 
 h2 {
-  margin-bottom: 0;
   font-size: medium;
 }
 
@@ -40,23 +52,32 @@ h3 {
   padding: 0;
 }
 
-#title {
-  margin-bottom: 1rem;
+footer {
+  padding: 0 0.5rem;
+  color: var(--grey-text-color);
+}
+
+#content {
+  padding: 0.5rem;
+  background-color: white;
 }
 
 .button-container {
   display: flex;
   gap: 0.5rem;
-  flex-direction: column;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 
 .button-container > button {
+  flex: 1;
   padding: 0.5rem;
 }
 
 #settings-table {
   width: 100%;
   font-size: smaller;
+  margin-bottom: 1rem;
 }
 
 #settings-table h3 {
@@ -71,31 +92,56 @@ h3 {
   visibility: hidden;
 }
 
-#shifts-header {
-  padding-bottom: 10px;
-}
-
 #shifts-table {
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
   margin-bottom: 10px;
+  font-size: small;
+}
+
+#shifts-table th:first-of-type {
+  border-top-left-radius: 5px;
+}
+
+#shifts-table th:last-of-type {
+  border-top-right-radius: 5px;
+}
+
+#shifts-table tr:last-of-type td:first-of-type {
+  border-bottom-left-radius: 5px;
+}
+
+#shifts-table tr:last-of-type td:last-of-type {
+  border-bottom-right-radius: 5px;
+}
+
+#shifts-table th {
+  background-color: var(--primary-color);
   font-size: smaller;
 }
 
 #shifts-table th {
-  background-color: #F0C377;
+  padding: 0.5rem;
+}
+
+#shifts-table td {
+  padding: 0.2rem;
 }
 
 #shifts-table h3 {
   margin: 0;
-  padding: 5px;
+}
+
+#shifts-table tbody tr:nth-child(odd) {
+  background-color: var(--orange-bg-color);
 }
 
 #clear-shifts {
   margin-bottom: 10px;
 }
 
-#footer {
-  color: #696969
+#no-shifts-message {
+  font-style: italic;
+  color: var(--grey-text-color);
 }

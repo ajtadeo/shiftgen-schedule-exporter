@@ -1,5 +1,5 @@
 /**
- * @file service_worker.js
+ * @file serviceWorker.js
  * @brief Extension service worker.
  */
 

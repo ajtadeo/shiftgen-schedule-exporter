@@ -17,6 +17,13 @@ export const TASKS = {
   },
 }
 
+export const PROVIDER_ENUM = {
+  UNKNOWN: 0,
+  DOCTOR: 1,
+  PA: 2
+}
+
+
 // export const FSM = {
 //   IDLE: -1,
 //   STARTED: 0,

@@ -15,12 +15,12 @@ export class TaskManager {
     };
     
     // Main message listener
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       const { type, taskId, data } = message;
       
       switch (type) {
         case 'START':
-          this.handleStart();
+          await this.handleStart();
           break;
         case 'CONTENT_SCRIPT_READY':
           console.log(`Task ${taskId} content script ready in tab ${sender.tab.id}`);
@@ -45,14 +45,23 @@ export class TaskManager {
   /**
    * @brief Starts the task workflow
    */
-  handleStart() {
+  async handleStart() {
     console.log("Starting task workflow");
     this.taskStates = {
       0: { status: 'pending', tabId: null, result: null },
       1: { status: 'pending', tabId: null, result: null },
       2: { status: 'pending', tabId: null, result: null }
     };
-    this.createTab(TASKS.USER.id, TASKS.USER.url);
+
+    const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
+    const targetMonth = localStorage.target_month;
+    const targetYear = localStorage.target_year;
+    const date = new Date(`${targetMonth} 1, ${targetYear}`);
+    const month = date.getMonth() + 1;
+
+    // https://www.shiftgen.com/member/multi_site_schedule?month_id=10&year_id=2025
+    const url = TASKS.USER.url + `?month_id=${month}&year_id=${targetYear}`
+    this.createTab(TASKS.USER.id, url);
   }
 
   /**

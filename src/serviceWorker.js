@@ -26,7 +26,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.set({
       shifts: {},
       calendar_id: "",
-      target_month: ""
+      target_month: new Date().toLocaleString('default', { month: 'long' }),
+      target_year: new Date().getFullYear()
     })
 
     initTaskManager();

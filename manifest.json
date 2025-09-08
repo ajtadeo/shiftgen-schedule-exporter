@@ -19,12 +19,12 @@
       "matches": ["https://www.shiftgen.com/member/multi_site_schedule*"]
     },
     {
-      "js": ["src/contentScripts/paContentScript.js"],
+      "js": ["src/contentScripts/adminContentScript.js"],
       "matches": ["https://www.shiftgen.com/admin/index"]
     },
     {
-      "js": ["src/contentScripts/doctorContentScript.js"],
-      "matches": ["https://www.shiftgen.com/member/schedule"]
+      "js": ["src/contentScripts/providerContentScript.js"],
+      "matches": ["https://www.shiftgen.com/member/schedule*"]
     }
   ],
   "web_accessible_resources": [

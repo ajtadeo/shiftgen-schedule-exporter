@@ -3,7 +3,7 @@
  * @brief Base class for scraping shift data
  */
 
-import { PROVIDER_ENUM } from "./common.js";
+import { TASKS, PROVIDER_ENUM } from "./common.js";
 
 const patterns = {
   1: { pattern: /^(?!SJH)(?!PIT)(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4})$/, groupNames: ["location", "start_time_str", "end_time_str"] }, // North 2130-0600
@@ -84,6 +84,8 @@ export class Scraper {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
         this.executeTask();
+      } else if (message.type === 'TRIGGER_CHANGE_SCHEDULE' && message.taskId === this.taskId) {
+        this.changeSchedule(message.siteId);
       }
     });
   }
@@ -99,13 +101,12 @@ export class Scraper {
         taskId: this.taskId
       });
 
-      const result = await this.scrape();
+      await this.scrape();
 
       // Signal task completion
       chrome.runtime.sendMessage({
         type: 'TASK_COMPLETED',
         taskId: this.taskId,
-        data: result
       });
 
       // Close tab
@@ -119,6 +120,30 @@ export class Scraper {
         data: error.message
       });
     }
+  }
+
+  /**
+   * Changes the schedule by clicking the appropriate button in the site navigation
+   * @param {number} siteId Site ID
+   */
+  changeSchedule(siteId) {
+    let button;
+    if (siteId === TASKS.DOCTOR.siteId) {
+      button = document.querySelector("#sites-nav-StJosephCHOCPhysician");
+    } else if (siteId === TASKS.PA.siteId) {
+      button = document.querySelector("#sites-nav-StJosephCHOCMLP");
+    } else if (siteId === TASKS.USER.siteId) {
+      button = document.querySelector("#sites-nav-CHOCScribe");
+    } else {
+      console.error(`${this.taskId} failed:`, error);
+      chrome.runtime.sendMessage({
+        type: 'TASK_FAILED',
+        taskId: this.taskId,
+        data: `Failed to change schedule for siteId: ${siteId}`
+      });
+    }
+
+    button.click();
   }
 
   /**

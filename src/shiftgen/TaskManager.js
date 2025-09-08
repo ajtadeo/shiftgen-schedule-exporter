@@ -3,11 +3,12 @@
  * @brief Class for scheduling tasks for multi-tab workflow
  */
 
-import { TASKS } from "./common.js"
+import { TASKS, STATE } from "./common.js"
 
 export class TaskManager {
   constructor() {
     // Initialize task states
+    this.state = STATE.IDLE;
     this.taskStates = {
       0: { status: 'idle', tabId: null, result: null },
       1: { status: 'idle', tabId: null, result: null },
@@ -20,23 +21,44 @@ export class TaskManager {
       
       switch (type) {
         case 'START':
-          await this.handleStart();
+          if (this.state === STATE.IDLE) {
+            this.state = STATE.CREATE_TAB_USER;
+            await this.handleStart();
+          }
           break;
         case 'CONTENT_SCRIPT_READY':
-          console.log(`Task ${taskId} content script ready in tab ${sender.tab.id}`);
-          this.triggerTask(taskId, sender.tab.id)
+          console.log(`Content script ready in tab ${sender.tab.id}`);
+          if (this.state === STATE.CREATE_TAB_USER) {
+            this.triggerChangeSchedule(taskId, sender.tab.id, TASKS.USER.siteId);
+          } else if (this.state === STATE.CREATE_TAB_PROVIDER) {
+            this.triggerChangeSchedule(taskId, sender.tab.id);
+          } else if (this.state === STATE.CHANGE_SCHEDULE_USER) {
+            this.state = STATE.RUNNING;
+            this.triggerTask(TASKS.USER.id, sender.tab.id)
+          } else if (this.state === STATE.CHANGE_SCHEDULE_PA) {
+            this.state = STATE.RUNNING;
+            this.triggerTask(TASKS.PA.id, sender.tab.id)
+          } else if (this.state === STATE.CHANGE_SCHEDULE_DOCTOR) {
+            this.state = STATE.RUNNING;
+            this.triggerTask(TASKS.DOCTOR.id, sender.tab.id)
+          }
           break;
         case 'TASK_RUNNING':
-          this.handleTaskRunning(taskId, sender.tab.id);
+          if (this.state === STATE.RUNNING) {
+            this.handleTaskRunning(taskId, sender.tab.id);
+          }
           break;
         case 'TASK_COMPLETED':
-          this.handleTaskCompleted(taskId, sender.tab.id, data);
+          if (this.state === STATE.RUNNING) {
+            this.state = STATE.COMPLETED;
+            this.handleTaskCompleted(taskId, sender.tab.id, data);
+          }
           break;
         case 'TASK_FAILED':
-          this.handleTaskFailed(taskId, data);
-          break;
-        case 'REQUEST_TASK_STATUS':
-          sendResponse(this.taskStates);
+          if (this.state === STATE.RUNNING || this.state === STATE.CHANGE_SCHEDULE) {
+            this.state = STATE.IDLE;
+            this.handleTaskFailed(taskId, data);
+          }
           break;
       }
     });
@@ -96,27 +118,31 @@ export class TaskManager {
     // Check if we can create tabs for dependent tasks
     if (this.taskStates[TASKS.USER.id].status === 'completed' && 
         this.taskStates[TASKS.PA.id].status === 'pending') {
+      this.state = STATE.CREATE_TAB_PROVIDER;
       this.createTab(TASKS.PA.id, TASKS.PA.url)
       return;
-    }
-    
-    if (this.taskStates[TASKS.USER.id].status === 'completed' && 
+    } else if (this.taskStates[TASKS.USER.id].status === 'completed' && 
         this.taskStates[TASKS.DOCTOR.id].status === 'pending') {
+      this.state = STATE.CREATE_TAB_PROVIDER;
       this.createTab(TASKS.DOCTOR.id, TASKS.DOCTOR.url);
       return;
-    }
-
-    // Check if task workflow is complete
-    if (this.taskStates[TASKS.USER.id].status === 'completed' &&
+    } // Check if task workflow is complete
+      else if (this.taskStates[TASKS.USER.id].status === 'completed' &&
         this.taskStates[TASKS.PA.id].status === 'completed' &&
         this.taskStates[TASKS.DOCTOR.id].status === 'completed'
     ) {
       console.log("Completed task workflow");
+      this.state = STATE.IDLE;
       this.taskStates = {
         0: { status: 'idle', tabId: null, result: null },
         1: { status: 'idle', tabId: null, result: null },
         2: { status: 'idle', tabId: null, result: null }
       };
+    } else {
+      console.error(`Task ${taskId} failed:`, "Invalid completion state");
+      console.log(this.taskStates)
+      this.state = STATE.IDLE;
+      return;
     }
   }
 
@@ -133,7 +159,7 @@ export class TaskManager {
       error: error
     };
 
-    console.log(`Task ${taskId} failed:`, error);
+    console.error(`Task ${taskId} failed:`, error);
   }
 
   /**
@@ -156,7 +182,7 @@ export class TaskManager {
    * @brief Triggers a task
    * @param {number} taskId Task ID
    */
-  async triggerTask(taskId, tabId) {    
+  triggerTask(taskId, tabId) {    
     // Send message to trigger task
     chrome.tabs.sendMessage(tabId, {
       type: 'TRIGGER_TASK',
@@ -169,5 +195,52 @@ export class TaskManager {
     };
 
     console.log(`Task ${taskId} triggered in tab ${tabId}`);
+  }
+
+  /**
+   * @brief Triggers a schedule change based on the task order USER -> PA -> DOCTOR
+   * @param {*} taskId Task ID scheduling the change
+   * @param {*} tabId Tab ID
+   * @param {*} siteId Site ID to change schedule to. Null if USER is requesting
+   *                   a schedule change to USER to reset the site state.
+   */
+  triggerChangeSchedule(taskId, tabId, siteId=null) {
+    let schedule = ""
+    let taskToUpdate = null;
+
+    if (siteId === null) {
+      if (taskId === TASKS.USER.id) {
+        this.state = STATE.CHANGE_SCHEDULE_PA;
+        siteId = TASKS.PA.siteId;
+        taskToUpdate = TASKS.PA.id;
+        schedule = "PA";
+      } else if (taskId === TASKS.PA.id) {
+        this.state = STATE.CHANGE_SCHEDULE_DOCTOR;
+        siteId = TASKS.DOCTOR.siteId;
+        taskToUpdate = TASKS.DOCTOR.id;
+        schedule = "DOCTOR"
+      } else {
+        console.error(`Task ${taskId} failed:`, "Invalid schedule change trigger");
+        this.state = STATE.IDLE;
+        return;
+      }
+    } else {
+      this.state = STATE.CHANGE_SCHEDULE_USER;
+      taskToUpdate = TASKS.USER.id;
+      schedule = "USER"
+    }
+
+    chrome.tabs.sendMessage(tabId, {
+      type: 'TRIGGER_CHANGE_SCHEDULE',
+      taskId: taskId,
+      siteId: siteId
+    });
+
+    this.taskStates[taskToUpdate] = {
+      ...this.taskStates[taskToUpdate],
+      status: 'change_schedule',
+    };
+
+    console.log(`Triggered to change schedule to ${schedule} in tab ${tabId}`);
   }
 }

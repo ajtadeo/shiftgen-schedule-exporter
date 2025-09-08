@@ -36,11 +36,14 @@ export class TaskManager {
             this.state = STATE.RUNNING;
             this.triggerTask(TASKS.USER.id, sender.tab.id)
           } else if (this.state === STATE.CHANGE_SCHEDULE_PA) {
-            this.state = STATE.RUNNING;
-            this.triggerTask(TASKS.PA.id, sender.tab.id)
+            this.state = STATE.NAVIGATING;
+            this.triggerNav(TASKS.PA.id, sender.tab.id);
           } else if (this.state === STATE.CHANGE_SCHEDULE_DOCTOR) {
+            this.state = STATE.NAVIGATING;
+            this.triggerNav(TASKS.DOCTOR.id, sender.tab.id);
+          } else if (this.state === STATE.NAVIGATING) {
             this.state = STATE.RUNNING;
-            this.triggerTask(TASKS.DOCTOR.id, sender.tab.id)
+            this.triggerTask(taskId, sender.tab.id)
           }
           break;
         case 'TASK_RUNNING':
@@ -199,9 +202,9 @@ export class TaskManager {
 
   /**
    * @brief Triggers a schedule change based on the task order USER -> PA -> DOCTOR
-   * @param {*} taskId Task ID scheduling the change
-   * @param {*} tabId Tab ID
-   * @param {*} siteId Site ID to change schedule to. Null if USER is requesting
+   * @param {number} taskId Task ID scheduling the change
+   * @param {number} tabId Tab ID
+   * @param {number} siteId Site ID to change schedule to. Null if USER is requesting
    *                   a schedule change to USER to reset the site state.
    */
   triggerChangeSchedule(taskId, tabId, siteId=null) {
@@ -242,5 +245,24 @@ export class TaskManager {
     };
 
     console.log(`Triggered to change schedule to ${schedule} in tab ${tabId}`);
+  }
+
+  /**
+   * Triggers a navigation to the target schedule
+   * @param {number} taskId Task ID
+   * @param {number} tabId Tab ID
+   */
+  triggerNav(taskId, tabId) {
+    chrome.tabs.sendMessage(tabId, {
+      type: 'TRIGGER_NAV',
+      taskId: taskId,
+    });
+
+    this.taskStates[taskId] = {
+      ...this.taskStates[taskId],
+      status: 'navigating',
+    };
+
+    console.log(`Task ${taskId} triggered to navigate to schedule in tab ${tabId}`);
   }
 }

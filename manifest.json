@@ -20,11 +20,7 @@
     },
     {
       "js": ["src/contentScripts/adminContentScript.js"],
-      "matches": ["https://www.shiftgen.com/admin/index"]
-    },
-    {
-      "js": ["src/contentScripts/providerContentScript.js"],
-      "matches": ["https://www.shiftgen.com/member/schedule*"]
+      "matches": ["https://www.shiftgen.com/admin/index", "https://www.shiftgen.com/member/schedule*"]
     }
   ],
   "web_accessible_resources": [

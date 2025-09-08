@@ -81,11 +81,13 @@ export class Scraper {
     this.siteId = task.siteId;
     this.providerType = PROVIDER_ENUM[task.id];
     
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
         this.executeTask();
       } else if (message.type === 'TRIGGER_CHANGE_SCHEDULE' && message.taskId === this.taskId) {
         this.changeSchedule(message.siteId);
+      } else if (message.type === 'TRIGGER_NAV' && message.taskId === this.taskId) {
+        await this.navToSchedule();
       }
     });
   }
@@ -147,26 +149,60 @@ export class Scraper {
   }
 
   /**
+   * @brief Navigates to a published schedule from the admin page
+   */
+  async navToSchedule() {
+    // Find published schedules
+    const tables = document.querySelectorAll("table[data-controller=table-component]");
+    let publishedSchedules = null;
+    for (let table of tables) {
+      if (table.querySelector("thead").textContent.includes("Published Schedules")) {
+        publishedSchedules = table;
+        break;
+      }
+    }
+
+    if (publishedSchedules === null) {
+      console.error(`${this.taskId} failed:`, error);
+      chrome.runtime.sendMessage({
+        type: 'TASK_FAILED',
+        taskId: this.taskId,
+        data: `Failed to navigate to schedule for taskId: ${this.taskId}`
+      });
+    }
+
+    // Find schedule with target month and year
+    const localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
+    const targetMonth = localStorage.target_month;
+    const targetYear = localStorage.target_year;
+
+    const schedules = publishedSchedules.querySelectorAll("tbody tr");
+    let targetSchedule = null
+    for (let schedule of schedules) {
+      if (schedule.textContent.includes(targetMonth) && schedule.textContent.includes(targetYear)) {
+        targetSchedule = schedule;
+        break;
+      }
+    }
+
+    const button = targetSchedule.querySelector('button[data-action="click->admin#onAction"]');
+    const path = button.getAttribute("data-admin-url-param");
+    console.log(path)
+    window.location.href = `https://www.shiftgen.com${path}`;
+  }
+
+  /**
    * @brief Abstract method to scrape a web page. Must be implemented by derived classes.
    */
   async scrape() {
     throw new Error('scrape() method must be implemented by subclass');
   }
 
+  /**
+   * @brief Gets all shifts as Shift instances on the calendar
+   * @returns Array of Shift instances
+   */
   getAllShifts() {
-    // #calendar .shift-cell
-    // <div id="2025_09_02_16053" class="shift-cell group flex flex-col  " 
-    // data-controller="shift-cell-component" 
-    // data-shift-cell-component-shift-calendar-component-outlet="#calendar" 
-    // data-shift-cell-component-shift-key-value="2025_09_02_16053" 
-    // data-shift-cell-component-name-value="South 2130-0600" 
-    // data-shift-cell-component-shift-group-id-value="" 
-    // data-shift-cell-component-assignee-id-value="noworker" 
-    // data-shift-cell-component-assignee-value="Empty" 
-    // data-action="focus-&gt;shift-cell-component#setSelectedShift 
-    // focusout-&gt;shift-cell-component#onBlur" tabindex="0">
-    // ...
-    // </div>
     let shifts = [];
 
     const shiftCells = document.querySelectorAll("#calendar .shift-cell");
@@ -181,6 +217,11 @@ export class Scraper {
     return shifts;
   }
 
+  /**
+   * @brief Parses a single shift cell element into a Shift instance
+   * @param {HTMLElement} cell Shift cell element
+   * @returns Shift instance
+   */
   parseShiftCell(cell) {
     const infoStr = cell.getAttribute("data-shift-cell-component-name-value");
     const date = cell.getAttribute("data-shift-cell-component-shift-key-value");

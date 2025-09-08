@@ -102,3 +102,5 @@ Open the extension popup to examine the processed shift data. To export the data
 
 1. Page redirects to USER print view
 2. Scrape page, then redirect to [https://www.shiftgen.com/member/schedule](https://www.shiftgen.com/member/schedule) -->
+
+https://stackoverflow.com/questions/26359206/tasks-automation-with-chrome-extensions

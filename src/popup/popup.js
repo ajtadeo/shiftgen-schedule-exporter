@@ -47,12 +47,15 @@ window.onload = async function () {
       return;
     }
 
-    await chrome.storage.local.set({
-      scraping_status: SCRAPING_STATUS_ENUM.STARTING,
-    });
+    // Start task workflow
+    chrome.runtime.sendMessage({ type: 'START' });
 
-    // initiate automatic scraping
-    await chrome.tabs.create({ active: false, url: "https://www.shiftgen.com/member/multi_site_schedule" });
+    // await chrome.storage.local.set({
+    //   scraping_status: SCRAPING_STATUS_ENUM.STARTING,
+    // });
+
+    // // initiate automatic scraping
+    // await chrome.tabs.create({ active: false, url: "https://www.shiftgen.com/member/multi_site_schedule" });
   })
   
   // populate shifts table

@@ -20,12 +20,6 @@ export const TASKS = {
   }
 }
 
-export const PROVIDER_ENUM = {
-  UNKNOWN: 0,
-  DOCTOR: 1,
-  PA: 2
-}
-
 export const STATE = {
   IDLE: 0,
   CREATE_TAB_USER: 1,

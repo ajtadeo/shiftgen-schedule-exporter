@@ -3,6 +3,8 @@
  * @brief JavaScript for extension popup.
  */
 
+import { TASKS } from "../shiftgen/common.js";
+
 window.onload = async function () {
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
@@ -49,13 +51,6 @@ window.onload = async function () {
 
     // Start task workflow
     chrome.runtime.sendMessage({ type: 'START' });
-
-    // await chrome.storage.local.set({
-    //   scraping_status: SCRAPING_STATUS_ENUM.STARTING,
-    // });
-
-    // // initiate automatic scraping
-    // await chrome.tabs.create({ active: false, url: "https://www.shiftgen.com/member/multi_site_schedule" });
   })
   
   // populate shifts table
@@ -71,11 +66,11 @@ window.onload = async function () {
     clone.querySelector(".shift-provider-name").textContent = value.providerName;
 
     let providerType;
-    if (value.providerType === PROVIDER_ENUM.DOCTOR) {
+    if (value.providerType === TASKS.DOCTOR.id) {
       providerType = "Doctor"
-    } else if (value.providerType === PROVIDER_ENUM.PA) {
+    } else if (value.providerType === TASKS.PA.id) {
       providerType = "PA"
-    } else if (value.providerType === PROVIDER_ENUM.UNKNOWN) {
+    } else if (value.providerType === TASKS.USER.id) {
       providerType = "Unknown"
     } else {
       providerType = "Invalid Type"

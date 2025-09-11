@@ -3,7 +3,7 @@
  * @brief Base class for scraping shift data
  */
 
-import { TASKS, PROVIDER_ENUM } from "./common.js";
+import { TASKS } from "./common.js";
 
 const patterns = {
   1: { pattern: /^(?!SJH)(?!PIT)(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4})$/, groupNames: ["location", "start_time_str", "end_time_str"] }, // North 2130-0600
@@ -22,7 +22,7 @@ export class Shift {
    * @param {string} providerType Provider type
    * @param {string} providerName Provider name 
    */
-  constructor(startTime, endTime, location, overnight, providerType=PROVIDER_ENUM.UNKNOWN, providerName="") {
+  constructor(startTime, endTime, location, overnight, providerType, providerName) {
     this.startTime = startTime;                // epoch ms (int)
     this.endTime = endTime;                    // epoch ms (int)
     this.location = location;                  // string
@@ -52,11 +52,11 @@ export class Shift {
    */
   print() {
     let prefix = "";
-    if (this.providerType === PROVIDER_ENUM.DOCTOR) {
+    if (this.providerType === TASKS.DOCTOR.id) {
       prefix = "DOCTOR";
-    } else if (this.providerType === PROVIDER_ENUM.PA) {
+    } else if (this.providerType === TASKS.PA.id) {
       prefix = "PA/NP";
-    } else if (this.providerType === PROVIDER_ENUM.UNKNOWN) {
+    } else if (this.providerType === TASKS.USER.id) {
       prefix = "UNKNOWN";
     }
 
@@ -79,13 +79,7 @@ export class Scraper {
   constructor(task) {
     this.taskId = task.id;
     this.siteId = task.siteId;
-    if (task.id === TASKS.DOCTOR.id) {
-      this.providerType = PROVIDER_ENUM.DOCTOR;
-    } else if (task.id === TASKS.PA.id) {
-      this.providerType = PROVIDER_ENUM.PA;
-    } else {
-      this.providerType = PROVIDER_ENUM.UNKNOWN;
-    }
+    this.providerType = task.id;
     
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
@@ -313,7 +307,7 @@ export class Scraper {
         endDateTime.getTime(),
         info["location"].trim().toUpperCase(),
         overnight,
-        PROVIDER_ENUM.UNKNOWN,
+        TASKS.USER.id,
         ""
       )
     } else {

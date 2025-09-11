@@ -4,7 +4,7 @@
  */
 
 import { Scraper } from "./Scraper.js";
-import { TASKS, PROVIDER_ENUM } from "./common.js";
+import { TASKS } from "./common.js";
 
 export class PaScraper extends Scraper {
   /**
@@ -50,7 +50,7 @@ export class PaScraper extends Scraper {
 
       if (maxOverlapShift !== undefined) {
         localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.providerName;
-        localStorage["shifts"][userShift.startTime]["providerType"] = PROVIDER_ENUM.PA;
+        localStorage["shifts"][userShift.startTime]["providerType"] = TASKS.PA.id;
       }
     }
 

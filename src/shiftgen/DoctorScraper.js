@@ -4,7 +4,7 @@
  */
 
 import { Scraper } from "./Scraper.js";
-import { TASKS, PROVIDER_ENUM } from "./common.js";
+import { TASKS } from "./common.js";
 
 export class DoctorScraper extends Scraper {
   /**
@@ -51,7 +51,7 @@ export class DoctorScraper extends Scraper {
 
       if (maxOverlapShift !== undefined) {
         localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.providerName;
-        localStorage["shifts"][userShift.startTime]["providerType"] = PROVIDER_ENUM.DOCTOR;
+        localStorage["shifts"][userShift.startTime]["providerType"] = TASKS.DOCTOR.id;
       }
     }
 

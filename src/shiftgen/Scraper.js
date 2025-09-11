@@ -79,7 +79,13 @@ export class Scraper {
   constructor(task) {
     this.taskId = task.id;
     this.siteId = task.siteId;
-    this.providerType = PROVIDER_ENUM[task.id];
+    if (task.id === TASKS.DOCTOR.id) {
+      this.providerType = PROVIDER_ENUM.DOCTOR;
+    } else if (task.id === TASKS.PA.id) {
+      this.providerType = PROVIDER_ENUM.PA;
+    } else {
+      this.providerType = PROVIDER_ENUM.UNKNOWN;
+    }
     
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
@@ -187,7 +193,6 @@ export class Scraper {
 
     const button = targetSchedule.querySelector('button[data-action="click->admin#onAction"]');
     const path = button.getAttribute("data-admin-url-param");
-    console.log(path)
     window.location.href = `https://www.shiftgen.com${path}`;
   }
 
@@ -209,7 +214,6 @@ export class Scraper {
     for (let cell of shiftCells) {
       const s = this.parseShiftCell(cell);
       if (s !== undefined) {
-        s.print();
         shifts.push(s);
       }
     }
@@ -225,12 +229,12 @@ export class Scraper {
   parseShiftCell(cell) {
     const infoStr = cell.getAttribute("data-shift-cell-component-name-value");
     const date = cell.getAttribute("data-shift-cell-component-shift-key-value");
-    let name = cell.getAttribute("data-shift-cell-component-assignee-value");
+    let assignee = cell.getAttribute("data-shift-cell-component-assignee-value");
 
     // Parse date into month, day, year
     const dateMatch = date.match(/^(\d{4})_(\d{2})_(\d{2})/);
     if (dateMatch === null) {
-      console.log("Date could not be parsed:", date);
+      console.warn("Date could not be parsed:", date);
       return undefined;
     }
     const [_, year, month, day] = dateMatch;
@@ -250,7 +254,7 @@ export class Scraper {
     }
 
     if (match === null) {
-      console.log("Info could not be parsed:", infoStr);
+      console.warn("Info could not be parsed:", infoStr);
       return undefined;
     }
 
@@ -297,18 +301,20 @@ export class Scraper {
     }
 
     // Rename providers
-    if (name === "SAINTGEORGES") {
-      name = "MSG";
-    } else if (name === "NISHIOKA") {
-      name = "NISH";
+    if (assignee === "SAINTGEORGES") {
+      assignee = "MSG";
+    } else if (assignee === "NISHIOKA") {
+      assignee = "NISH";
     }
 
-    if (name === "Empty") {
+    if (this.taskId === TASKS.USER.id) {
       return new Shift(
         startTime.getTime(),
         endDateTime.getTime(),
         info["location"].trim().toUpperCase(),
-        overnight
+        overnight,
+        PROVIDER_ENUM.UNKNOWN,
+        ""
       )
     } else {
       return new Shift(
@@ -317,8 +323,23 @@ export class Scraper {
         info["location"].trim().toUpperCase(),
         overnight,
         this.providerType,
-        name.trim()
+        assignee.trim()
       );
     }
+  }
+
+  /**
+   * @brief Calculates the overlap in milliseconds between two shifts.
+   * 
+   * @param {Shift} shift Provider shift
+   * @param {Shift} userShift User's shift
+   * 
+   * @returns Length in milliseconds of the overlap. 0 if no overlap exists
+   */
+  getOverlap(shift, userShift) {
+    let overlapStart = Math.max(userShift.startTime, shift.startTime);
+    let overlapEnd = Math.min(userShift.endTime, shift.endTime);
+    let overlapLength = Math.max(0, overlapEnd - overlapStart);
+    return overlapLength;
   }
 }

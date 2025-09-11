@@ -77,6 +77,7 @@ export class TaskManager {
       1: { status: 'pending', tabId: null, result: null },
       2: { status: 'pending', tabId: null, result: null }
     };
+    await chrome.storage.local.set({ shifts: {} });
 
     const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
     const targetMonth = localStorage.target_month;
@@ -120,14 +121,16 @@ export class TaskManager {
     
     // Check if we can create tabs for dependent tasks
     if (this.taskStates[TASKS.USER.id].status === 'completed' && 
-        this.taskStates[TASKS.PA.id].status === 'pending') {
-      this.state = STATE.CREATE_TAB_PROVIDER;
-      this.createTab(TASKS.PA.id, TASKS.PA.url)
-      return;
-    } else if (this.taskStates[TASKS.USER.id].status === 'completed' && 
-        this.taskStates[TASKS.DOCTOR.id].status === 'pending') {
+        this.taskStates[TASKS.DOCTOR.id].status === 'pending')
+    {
       this.state = STATE.CREATE_TAB_PROVIDER;
       this.createTab(TASKS.DOCTOR.id, TASKS.DOCTOR.url);
+      return;
+    } else if (this.taskStates[TASKS.USER.id].status === 'completed' && 
+               this.taskStates[TASKS.PA.id].status === 'pending')
+    {
+      this.state = STATE.CREATE_TAB_PROVIDER;
+      this.createTab(TASKS.PA.id, TASKS.PA.url)
       return;
     } // Check if task workflow is complete
       else if (this.taskStates[TASKS.USER.id].status === 'completed' &&
@@ -201,7 +204,7 @@ export class TaskManager {
   }
 
   /**
-   * @brief Triggers a schedule change based on the task order USER -> PA -> DOCTOR
+   * @brief Triggers a schedule change based on the task order USER -> DOCTOR -> PA
    * @param {number} taskId Task ID scheduling the change
    * @param {number} tabId Tab ID
    * @param {number} siteId Site ID to change schedule to. Null if USER is requesting
@@ -213,15 +216,15 @@ export class TaskManager {
 
     if (siteId === null) {
       if (taskId === TASKS.USER.id) {
-        this.state = STATE.CHANGE_SCHEDULE_PA;
-        siteId = TASKS.PA.siteId;
-        taskToUpdate = TASKS.PA.id;
-        schedule = "PA";
-      } else if (taskId === TASKS.PA.id) {
         this.state = STATE.CHANGE_SCHEDULE_DOCTOR;
         siteId = TASKS.DOCTOR.siteId;
         taskToUpdate = TASKS.DOCTOR.id;
-        schedule = "DOCTOR"
+        schedule = "DOCTOR";
+      } else if (taskId === TASKS.DOCTOR.id) {
+        this.state = STATE.CHANGE_SCHEDULE_PA;
+        siteId = TASKS.PA.siteId;
+        taskToUpdate = TASKS.PA.id;
+        schedule = "PA"
       } else {
         console.error(`Task ${taskId} failed:`, "Invalid schedule change trigger");
         this.state = STATE.IDLE;

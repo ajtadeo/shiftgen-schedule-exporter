@@ -6,18 +6,18 @@ export const TASKS = {
     url: "https://www.shiftgen.com/member/multi_site_schedule",
     schedule: "CHOC Scribe"
   },
-  PA: {
-    id: 1,
-    siteId: 84,
-    url: "https://www.shiftgen.com/admin/index",
-    schedule: "St Joseph/CHOC MLP"
-  },
   DOCTOR: {
-    id: 2,
+    id: 1,
     siteId: 80,
     url: "https://www.shiftgen.com/admin/index",
     schedule: "St Joseph/CHOC Physician"
   },
+  PA: {
+    id: 2,
+    siteId: 84,
+    url: "https://www.shiftgen.com/admin/index",
+    schedule: "St Joseph/CHOC MLP"
+  }
 }
 
 export const PROVIDER_ENUM = {

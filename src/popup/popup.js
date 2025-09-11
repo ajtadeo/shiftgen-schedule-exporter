@@ -125,10 +125,7 @@ window.onload = async function () {
   // setup clear shifts button
   document.querySelector("#clear-shifts").addEventListener("click", async () => {
     await chrome.storage.local.set({
-      shifts: {},
-      user_shifts_set: false,
-      doctor_shifts_set: false,
-      pa_shifts_set: false
+      shifts: {}
     });
 
     const tbody = document.querySelector("#shift-tbody");
@@ -153,12 +150,10 @@ window.onload = async function () {
 // enable/disable scrape buttons based on status flags
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   // fetch local storage variables 
-  let localStorage = await chrome.storage.local.get(["user_shifts_set", "doctor_shifts_set", "pa_shifts_set"]);
-  let userShiftsSet = localStorage.user_shifts_set
-  let doctorShiftsSet = localStorage.doctor_shifts_set
-  let paShiftsSet = localStorage.pa_shifts_set
+  let localStorage = await chrome.storage.local.get(["calendar_id"]);
+  let calendarId = localStorage.calendar_id;
 
-  if (userShiftsSet & doctorShiftsSet & paShiftsSet) {
+  if (calendarId !== "") {
     document.querySelector("#google-calendar-export-button").disabled = false;
   }
 });
@@ -168,27 +163,17 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
  * @param {string} token 
  * @param {string} calendarId
  * @param {object} shift 
- * 
- * Sample shift object:
- * {
- *   "endDateTime": "2025-03-09T23:30:00.000-08:00",
- *   "location": "PA",
- *   "overnight": true,
- *   "providerName": "FIX ME",
- *   "providerType": -1,
- *   "startDateTime": "2025-03-09T15:00:00.000-08:00"
- * }
  */
 function exportToGoogleCalendar(token, calendarId, shift) {
   let event = {
     summary: `CHOC Scribe: ${shift.location} ${shift.providerName}`,
     description: 'Generated using Schedule Exporter for ShiftGen!',
     start: {
-      'dateTime': new Date(startTime).toISOString(),
+      'dateTime': new Date(shift.startTime).toISOString(),
       'timeZone': 'America/Los_Angeles'
     },
     end: {
-      'dateTime': new Date(endTime).toISOString(),
+      'dateTime': new Date(shift.endTime).toISOString(),
       'timeZone': 'America/Los_Angeles'
     }
   };

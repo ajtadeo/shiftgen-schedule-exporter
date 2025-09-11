@@ -248,7 +248,7 @@ export class Scraper {
     }
 
     if (match === null) {
-      console.warn("Info could not be parsed:", infoStr);
+      console.log("Info could not be parsed:", infoStr);
       return undefined;
     }
 

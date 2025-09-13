@@ -8,7 +8,7 @@ import { TASKS } from "../shiftgen/common.js";
 window.onload = async function () {
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
-    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
+    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id"]);
 
     if (localStorage.calendar_id === "") {
       alert("Please set Calendar ID before exporting to Google Calendar.")
@@ -42,19 +42,24 @@ window.onload = async function () {
 
   // setup automatic website scraper for all shifts
   document.querySelector("#scrape-button").addEventListener("click", async () => {
-    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
+    let localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
 
     if (localStorage.target_month === "") {
       alert("Please set target month before scraping shifts.")
       return;
     }
 
+    if (localStorage.target_year === "") {
+      alert("Please set target year before scraping shifts.")
+      return;
+    } 
+
     // Start task workflow
     chrome.runtime.sendMessage({ type: 'START' });
   })
   
   // populate shifts table
-  let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month"]);
+  let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month", "target_year"]);
   let shifts = localStorage.shifts;
   const tbody = document.querySelector("#shift-tbody");
   const template = document.querySelector("#shift-template");
@@ -118,6 +123,39 @@ window.onload = async function () {
         document.querySelector("#target-month-button").disabled = true;
         document.querySelector("#target-month-message").style.visibility = "visible"
         console.log("Target Month saved:", targetMonth);
+      }
+    });
+  }); 
+
+  // handle target year form submission
+  const currentYear = new Date().getFullYear();
+  const nextYear = currentYear + 1;
+
+  let currentYearElement = document.createElement("option")
+  currentYearElement.value = currentYear.toString();
+  currentYearElement.textContent = currentYear.toString();
+  document.querySelector("#target-year-select").appendChild(currentYearElement);
+  let nextYearElement = document.createElement("option")
+  nextYearElement.value = nextYear.toString();
+  nextYearElement.textContent = nextYear.toString();
+  document.querySelector("#target-year-select").appendChild(nextYearElement);
+
+  if (localStorage.target_year !== "") {
+    document.querySelector("#target-year-select").value = localStorage.target_year;
+  }
+
+  document.querySelector("#target-year-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const targetYear = document.getElementById("target-year-select").value;
+  
+    await chrome.storage.local.set({ "target_year": targetYear }, function() {
+      if (chrome.runtime.lastError) {
+        document.querySelector("#target-year-message").textContent = "Error: " + chrome.runtime.lastError;
+        console.error("Error saving to storage:", chrome.runtime.lastError);
+      } else {
+        document.querySelector("#target-year-button").disabled = true;
+        document.querySelector("#target-year-message").style.visibility = "visible"
+        console.log("Target Year saved:", targetYear);
       }
     });
   }); 

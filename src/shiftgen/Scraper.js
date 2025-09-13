@@ -299,6 +299,8 @@ export class Scraper {
       assignee = "MSG";
     } else if (assignee === "NISHIOKA") {
       assignee = "NISH";
+    } else if (assignee === "MIRCHANDANI") {
+      assignee = "D$"
     }
 
     if (this.taskId === TASKS.USER.id) {

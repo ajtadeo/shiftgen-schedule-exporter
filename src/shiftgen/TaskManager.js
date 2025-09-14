@@ -14,6 +14,7 @@ export class TaskManager {
       1: { status: 'idle', tabId: null, result: null },
       2: { status: 'idle', tabId: null, result: null }
     };
+    this.pendingSchedules = []
     
     // Main message listener
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
@@ -27,23 +28,36 @@ export class TaskManager {
           }
           break;
         case 'CONTENT_SCRIPT_READY':
-          console.log(`Content script ready in tab ${sender.tab.id}`);
+          console.log(`Content script ready in tab ${sender.tab.id} from ${taskId}`);
           if (this.state === STATE.CREATE_TAB_USER) {
-            this.triggerChangeSchedule(taskId, sender.tab.id, TASKS.USER.siteId);
+            this.triggerChangeSite(taskId, sender.tab.id, TASKS.USER.siteId);
           } else if (this.state === STATE.CREATE_TAB_PROVIDER) {
-            this.triggerChangeSchedule(taskId, sender.tab.id);
-          } else if (this.state === STATE.CHANGE_SCHEDULE_USER) {
+            this.triggerChangeSite(taskId, sender.tab.id);
+          } else if (this.state === STATE.CHANGE_SITE_USER) {
             this.state = STATE.RUNNING;
             this.triggerTask(TASKS.USER.id, sender.tab.id)
-          } else if (this.state === STATE.CHANGE_SCHEDULE_PA) {
-            this.state = STATE.NAVIGATING;
-            this.triggerNav(TASKS.PA.id, sender.tab.id);
-          } else if (this.state === STATE.CHANGE_SCHEDULE_DOCTOR) {
-            this.state = STATE.NAVIGATING;
-            this.triggerNav(TASKS.DOCTOR.id, sender.tab.id);
+          } else if (this.state === STATE.CHANGE_SITE_PA) {
+            this.state = STATE.COLLECT_SCHEDULES;
+            this.triggerCollectSchedules(TASKS.PA.id, sender.tab.id);
+          } else if (this.state === STATE.CHANGE_SITE_DOCTOR) {
+            this.state = STATE.COLLECT_SCHEDULES;
+            this.triggerCollectSchedules(TASKS.DOCTOR.id, sender.tab.id);
           } else if (this.state === STATE.NAVIGATING) {
             this.state = STATE.RUNNING;
             this.triggerTask(taskId, sender.tab.id)
+          }
+          break;
+        case 'SCHEDULES':
+          if (this.state == STATE.COLLECT_SCHEDULES) {
+            console.log(data.pendingSchedules)
+            this.pendingSchedules = data.pendingSchedules;
+            if (this.pendingSchedules.length !== 0) {
+              this.state = STATE.NAVIGATING;
+              this.handlePendingSchedules(taskId, sender.tab.id);
+            } else {
+              this.state = STATE.IDLE;
+              this.handleTaskFailed(taskId, `No schedules found for ${data.targetMonth} ${data.targetYear}`);
+            }
           }
           break;
         case 'TASK_RUNNING':
@@ -58,7 +72,7 @@ export class TaskManager {
           }
           break;
         case 'TASK_FAILED':
-          if (this.state === STATE.RUNNING || this.state === STATE.CHANGE_SCHEDULE) {
+          if (this.state !== STATE.IDLE) {
             this.state = STATE.IDLE;
             this.handleTaskFailed(taskId, data);
           }
@@ -77,6 +91,7 @@ export class TaskManager {
       1: { status: 'pending', tabId: null, result: null },
       2: { status: 'pending', tabId: null, result: null }
     };
+    this.pendingSchedules = [];
     await chrome.storage.local.set({ shifts: {} });
 
     const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
@@ -119,23 +134,36 @@ export class TaskManager {
     
     console.log(`Task ${taskId} completed in tab ${tabId}`);
     
+    // Check if all pending schedules have been scraped
+    if (this.pendingSchedules.length !== 0) {
+      this.state = STATE.NAVIGATING;
+      this.handlePendingSchedules(taskId, tabId);
+      return;
+    }
+
+    this.taskStates[taskId] = {
+      ...this.taskStates[taskId],
+      status: 'all completed',
+      result: result
+    };
+
     // Check if we can create tabs for dependent tasks
-    if (this.taskStates[TASKS.USER.id].status === 'completed' && 
+    if (this.taskStates[TASKS.USER.id].status === 'all completed' && 
         this.taskStates[TASKS.DOCTOR.id].status === 'pending')
     {
       this.state = STATE.CREATE_TAB_PROVIDER;
       this.createTab(TASKS.DOCTOR.id, TASKS.DOCTOR.url);
       return;
-    } else if (this.taskStates[TASKS.USER.id].status === 'completed' && 
+    } else if (this.taskStates[TASKS.USER.id].status === 'all completed' && 
                this.taskStates[TASKS.PA.id].status === 'pending')
     {
       this.state = STATE.CREATE_TAB_PROVIDER;
       this.createTab(TASKS.PA.id, TASKS.PA.url)
       return;
     } // Check if task workflow is complete
-      else if (this.taskStates[TASKS.USER.id].status === 'completed' &&
-        this.taskStates[TASKS.PA.id].status === 'completed' &&
-        this.taskStates[TASKS.DOCTOR.id].status === 'completed'
+      else if (this.taskStates[TASKS.USER.id].status === 'all completed' &&
+        this.taskStates[TASKS.PA.id].status === 'all completed' &&
+        this.taskStates[TASKS.DOCTOR.id].status === 'all completed'
     ) {
       console.log("Completed task workflow");
       this.state = STATE.IDLE;
@@ -145,9 +173,8 @@ export class TaskManager {
         2: { status: 'idle', tabId: null, result: null }
       };
     } else {
-      console.error(`Task ${taskId} failed:`, "Invalid completion state");
-      console.log(this.taskStates)
       this.state = STATE.IDLE;
+      this.handleTaskFailed(taskId, "Invalid completion state");
       return;
     }
   }
@@ -166,6 +193,12 @@ export class TaskManager {
     };
 
     console.error(`Task ${taskId} failed:`, error);
+    console.log(this.taskStates);
+  }
+
+  handlePendingSchedules(taskId, tabId) {
+    const scheduleUrl = this.pendingSchedules.pop();
+    this.triggerScheduleNav(taskId, tabId, scheduleUrl);
   }
 
   /**
@@ -181,7 +214,7 @@ export class TaskManager {
       tabId: targetTabId
     };
 
-    console.log(`Task ${taskId} created in tab ${targetTabId}`);
+    console.log(`Task ${taskId} created in tab ${targetTabId} for ${url}`);
   }
 
   /**
@@ -204,68 +237,80 @@ export class TaskManager {
   }
 
   /**
-   * @brief Triggers a schedule change based on the task order USER -> DOCTOR -> PA
+   * @brief Triggers a site change based on the task order USER -> DOCTOR -> PA
    * @param {number} taskId Task ID scheduling the change
    * @param {number} tabId Tab ID
-   * @param {number} siteId Site ID to change schedule to. Null if USER is requesting
-   *                   a schedule change to USER to reset the site state.
+   * @param {number} siteId Site ID to change site to. Null if USER is requesting
+   *                        a site change to USER to reset the site state.
    */
-  triggerChangeSchedule(taskId, tabId, siteId=null) {
-    let schedule = ""
+  triggerChangeSite(taskId, tabId, siteId=null) {
+    let site = ""
     let taskToUpdate = null;
 
     if (siteId === null) {
       if (taskId === TASKS.USER.id) {
-        this.state = STATE.CHANGE_SCHEDULE_DOCTOR;
+        this.state = STATE.CHANGE_SITE_DOCTOR;
         siteId = TASKS.DOCTOR.siteId;
         taskToUpdate = TASKS.DOCTOR.id;
-        schedule = "DOCTOR";
+        site = "DOCTOR";
       } else if (taskId === TASKS.DOCTOR.id) {
-        this.state = STATE.CHANGE_SCHEDULE_PA;
+        this.state = STATE.CHANGE_SITE_PA;
         siteId = TASKS.PA.siteId;
         taskToUpdate = TASKS.PA.id;
-        schedule = "PA"
+        site = "PA"
       } else {
-        console.error(`Task ${taskId} failed:`, "Invalid schedule change trigger");
         this.state = STATE.IDLE;
+        this.handleTaskFailed(taskId, "Invalid site change trigger");
         return;
       }
     } else {
-      this.state = STATE.CHANGE_SCHEDULE_USER;
+      this.state = STATE.CHANGE_SITE_USER;
       taskToUpdate = TASKS.USER.id;
-      schedule = "USER"
+      site = "USER"
     }
 
     chrome.tabs.sendMessage(tabId, {
-      type: 'TRIGGER_CHANGE_SCHEDULE',
+      type: 'TRIGGER_CHANGE_SITE',
       taskId: taskId,
       siteId: siteId
     });
 
     this.taskStates[taskToUpdate] = {
       ...this.taskStates[taskToUpdate],
-      status: 'change_schedule',
+      status: 'changing site',
     };
 
-    console.log(`Triggered to change schedule to ${schedule} in tab ${tabId}`);
+    console.log(`Triggered to change site to ${site} in tab ${tabId}`);
   }
 
   /**
    * Triggers a navigation to the target schedule
    * @param {number} taskId Task ID
    * @param {number} tabId Tab ID
+   * @param {string} url URL to set the tab with Tab ID to
    */
-  triggerNav(taskId, tabId) {
-    chrome.tabs.sendMessage(tabId, {
-      type: 'TRIGGER_NAV',
-      taskId: taskId,
-    });
+  triggerScheduleNav(taskId, tabId, url) {
+    chrome.tabs.update(tabId, { url: url });
 
     this.taskStates[taskId] = {
       ...this.taskStates[taskId],
       status: 'navigating',
     };
 
-    console.log(`Task ${taskId} triggered to navigate to schedule in tab ${tabId}`);
+    console.log(`Task ${taskId} triggered to navigate to ${url} in tab ${tabId}`);
+  }
+
+  triggerCollectSchedules(taskId, tabId) {
+    chrome.tabs.sendMessage(tabId, {
+      type: 'TRIGGER_COLLECT_SCHEDULES',
+      taskId: taskId
+    });
+
+    this.taskStates[taskId] = {
+      ...this.taskStates[taskId],
+      status: 'collecting schedules',
+    };
+
+    console.log(`Task ${taskId} triggered to collect schedules in tab ${tabId}`);
   }
 }

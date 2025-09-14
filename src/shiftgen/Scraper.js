@@ -84,10 +84,10 @@ export class Scraper {
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
         this.executeTask();
-      } else if (message.type === 'TRIGGER_CHANGE_SCHEDULE' && message.taskId === this.taskId) {
-        this.changeSchedule(message.siteId);
-      } else if (message.type === 'TRIGGER_NAV' && message.taskId === this.taskId) {
-        await this.navToSchedule();
+      } else if (message.type === 'TRIGGER_CHANGE_SITE' && message.taskId === this.taskId) {
+        this.changeSite(message.siteId);
+      } else if (message.type === 'TRIGGER_COLLECT_SCHEDULES' && message.taskId === this.taskId) {
+        await this.collectSchedules();
       }
     });
   }
@@ -125,10 +125,10 @@ export class Scraper {
   }
 
   /**
-   * Changes the schedule by clicking the appropriate button in the site navigation
+   * Changes the site by clicking the appropriate button in the site navigation
    * @param {number} siteId Site ID
    */
-  changeSchedule(siteId) {
+  changeSite(siteId) {
     let button;
     if (siteId === TASKS.DOCTOR.siteId) {
       button = document.querySelector("#sites-nav-StJosephCHOCPhysician");
@@ -141,7 +141,7 @@ export class Scraper {
       chrome.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
-        data: `Failed to change schedule for siteId: ${siteId}`
+        data: `Failed to change site for siteId: ${siteId}`
       });
     }
 
@@ -149,9 +149,10 @@ export class Scraper {
   }
 
   /**
-   * @brief Navigates to a published schedule from the admin page
+   * @brief Collects published schedule URLs associated with the target year and
+   * month from the admin page.
    */
-  async navToSchedule() {
+  async collectSchedules() {
     // Find published schedules
     const tables = document.querySelectorAll("table[data-controller=table-component]");
     let publishedSchedules = null;
@@ -171,23 +172,33 @@ export class Scraper {
       });
     }
 
-    // Find schedule with target month and year
+    // Find all schedules with target month and year
     const localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
     const targetMonth = localStorage.target_month;
     const targetYear = localStorage.target_year;
+    const targetMonthShort = new Date(`${targetMonth} 1, ${targetYear}`).toLocaleDateString("default", {month: "short"});
 
     const schedules = publishedSchedules.querySelectorAll("tbody tr");
-    let targetSchedule = null
+    let scheduleUrls = []
     for (let schedule of schedules) {
-      if (schedule.textContent.includes(targetMonth) && schedule.textContent.includes(targetYear)) {
-        targetSchedule = schedule;
-        break;
+      if ((schedule.textContent.includes(targetMonth) || schedule.textContent.includes(targetMonthShort)) &&
+          schedule.textContent.includes(targetYear))
+      {
+        const button = schedule.querySelector('button[data-action="click->admin#onAction"]');
+        const path = button.getAttribute("data-admin-url-param");
+        scheduleUrls.push(`https://www.shiftgen.com${path}`);
       }
     }
 
-    const button = targetSchedule.querySelector('button[data-action="click->admin#onAction"]');
-    const path = button.getAttribute("data-admin-url-param");
-    window.location.href = `https://www.shiftgen.com${path}`;
+    chrome.runtime.sendMessage({
+      type: 'SCHEDULES',
+      taskId: this.taskId,
+      data: {
+        pendingSchedules: scheduleUrls,
+        targetMonth: targetMonth,
+        targetYear: targetYear
+      }
+    });
   }
 
   /**

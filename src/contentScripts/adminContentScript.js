@@ -4,21 +4,21 @@
   const doctorScraper = await import(chrome.runtime.getURL('src/shiftgen/DoctorScraper.js'));
   const common = await import(chrome.runtime.getURL('src/shiftgen/common.js'));
 
-  const scheduleStr = document.querySelectorAll('button[data-action="click->button-dropdown-component#toggle"]')[2].textContent.trim();
+  const siteStr = document.querySelectorAll('button[data-action="click->button-dropdown-component#toggle"]')[2].textContent.trim();
   
-  if (scheduleStr === common.TASKS.PA.schedule) {
+  if (siteStr === common.TASKS.PA.site) {
     const scraper = new paScraper.PaScraper();
     chrome.runtime.sendMessage({
       type: 'CONTENT_SCRIPT_READY',
       taskId: common.TASKS.PA.id
     });
-  } else if (scheduleStr === common.TASKS.DOCTOR.schedule) {
+  } else if (siteStr === common.TASKS.DOCTOR.site) {
     const scraper = new doctorScraper.DoctorScraper();
     chrome.runtime.sendMessage({
       type: 'CONTENT_SCRIPT_READY',
       taskId: common.TASKS.DOCTOR.id
     });
-  } else if (scheduleStr === common.TASKS.USER.schedule) {
+  } else if (siteStr === common.TASKS.USER.site) {
     const scraper = new userScraper.UserScraper();
     chrome.runtime.sendMessage({
       type: 'CONTENT_SCRIPT_READY',

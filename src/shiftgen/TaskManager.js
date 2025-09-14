@@ -177,7 +177,7 @@ export class TaskManager {
         type: 'basic',
         iconUrl: '../public/icons/icon_32.png',
         title: 'ShiftGen Schedule Exporter',
-        message: "Completed task workflow",
+        message: "Completed scraping shifts",
         priority: 0
       }); 
 
@@ -266,7 +266,7 @@ export class TaskManager {
    * @param {number} siteId Site ID to change site to. Null if USER is requesting
    *                        a site change to USER to reset the site state.
    */
-  triggerChangeSite(taskId, tabId, siteId=null) {
+   triggerChangeSite(taskId, tabId, siteId=null) {
     let site = ""
     let taskToUpdate = null;
 

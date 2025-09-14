@@ -172,6 +172,15 @@ export class TaskManager {
         1: { status: 'idle', tabId: null, result: null },
         2: { status: 'idle', tabId: null, result: null }
       };
+
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: '../public/icons/icon_32.png',
+        title: 'ShiftGen Schedule Exporter',
+        message: "Completed task workflow",
+        priority: 0
+      }); 
+
     } else {
       this.state = STATE.IDLE;
       this.handleTaskFailed(taskId, "Invalid completion state");
@@ -194,8 +203,22 @@ export class TaskManager {
 
     console.error(`Task ${taskId} failed:`, error);
     console.log(this.taskStates);
+
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: '../public/icons/icon_32.png',
+      title: 'ShiftGen Schedule Exporter',
+      message: `Task ${taskId} failed: ${error}`,
+      priority: 0
+    });    
   }
 
+  /**
+   * @brief Pops a schedule URL from the list and triggers navigation to that
+   * schedule URL.
+   * @param {number} taskId Task ID
+   * @param {number} tabId Tab ID
+   */
   handlePendingSchedules(taskId, tabId) {
     const scheduleUrl = this.pendingSchedules.pop();
     this.triggerScheduleNav(taskId, tabId, scheduleUrl);
@@ -301,6 +324,11 @@ export class TaskManager {
     console.log(`Task ${taskId} triggered to navigate to ${url} in tab ${tabId}`);
   }
 
+  /**
+   * @brief Triggers schedule collection on tabId's tab
+   * @param {number} taskId Task ID
+   * @param {number} tabId Tab ID
+   */
   triggerCollectSchedules(taskId, tabId) {
     chrome.tabs.sendMessage(tabId, {
       type: 'TRIGGER_COLLECT_SCHEDULES',

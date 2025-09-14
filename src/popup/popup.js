@@ -11,7 +11,13 @@ window.onload = async function () {
     let localStorage = await chrome.storage.local.get(["shifts", "calendar_id"]);
 
     if (localStorage.calendar_id === "") {
-      alert("Please set Calendar ID before exporting to Google Calendar.")
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: '../../public/icons/icon_32.png',
+        title: 'ShiftGen Schedule Exporter',
+        message: "Please set Calendar ID before exporting to Google Calendar.",
+        priority: 0
+      }); 
       return;
     }
     
@@ -28,9 +34,21 @@ window.onload = async function () {
       }
 
       if (!postedAllEvents) {
-        alert("Failed to export shifts to Google Calendar. Please try again.")
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: '../../public/icons/icon_32.png',
+          title: 'ShiftGen Schedule Exporter',
+          message: "Failed to export shifts to Google Calendar. Please try again.",
+          priority: 0
+        }); 
       } else {
-        alert("Successfully exported shifts to Google Calendar!")
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: '../../public/icons/icon_32.png',
+          title: 'ShiftGen Schedule Exporter',
+          message: "Successfully exported shifts to Google Calendar!",
+          priority: 0
+        }); 
       }
 
       // SANITY CHECK
@@ -45,12 +63,24 @@ window.onload = async function () {
     let localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
 
     if (localStorage.target_month === "") {
-      alert("Please set target month before scraping shifts.")
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: '../../public/icons/icon_32.png',
+        title: 'ShiftGen Schedule Exporter',
+        message: "Please set target month before scraping shifts.",
+        priority: 0
+      }); 
       return;
     }
 
     if (localStorage.target_year === "") {
-      alert("Please set target year before scraping shifts.")
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: '../../public/icons/icon_32.png',
+        title: 'ShiftGen Schedule Exporter',
+        message: "Please set target year before scraping shifts.",
+        priority: 0
+      }); 
       return;
     } 
 

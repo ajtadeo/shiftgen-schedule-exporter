@@ -85,6 +85,9 @@ export class Scraper {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
         this.executeTask();
       } else if (message.type === 'TRIGGER_CHANGE_SITE' && message.taskId === this.taskId) {
+        if (message.taskToUpdate === TASKS.USER.id && !this.checkCalendarExistence()) {
+          return;
+        }
         this.changeSite(message.siteId);
       } else if (message.type === 'TRIGGER_COLLECT_SCHEDULES' && message.taskId === this.taskId) {
         await this.collectSchedules();
@@ -111,11 +114,10 @@ export class Scraper {
         taskId: this.taskId,
       });
 
-      // Close tab
-
+      // TODO: Close tab
 
     } catch (error) {
-      console.error(`${this.taskId} failed:`, error);
+      console.error(`Task ${this.taskId} failed:`, error);
       chrome.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
@@ -137,7 +139,7 @@ export class Scraper {
     } else if (siteId === TASKS.USER.siteId) {
       button = document.querySelector("#sites-nav-CHOCScribe");
     } else {
-      console.error(`${this.taskId} failed:`, error);
+      console.error(`Task ${this.taskId} failed:`, error);
       chrome.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
@@ -164,7 +166,7 @@ export class Scraper {
     }
 
     if (publishedSchedules === null) {
-      console.error(`${this.taskId} failed:`, error);
+      console.error(`Task ${this.taskId} failed:`, error);
       chrome.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
@@ -348,5 +350,24 @@ export class Scraper {
     let overlapEnd = Math.min(userShift.endTime, shift.endTime);
     let overlapLength = Math.max(0, overlapEnd - overlapStart);
     return overlapLength;
+  }
+
+  /**
+   * @brief Checks the existence of the calendar element. If it doesn't exist,
+   * then then a failure should be signaled to the TaskManager.
+   * @returns True if calendar exists, false otherwise
+   */
+  checkCalendarExistence() {
+    if (document.querySelector("#calendar") === null) {
+      console.error(`Task ${this.taskId} failed:`, "No user shifts available");
+      chrome.runtime.sendMessage({
+        type: 'TASK_FAILED',
+        taskId: this.taskId,
+        data: "No user shifts available"
+      });
+      return false;
+    } else {
+      return true;
+    }
   }
 }

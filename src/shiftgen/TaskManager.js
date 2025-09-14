@@ -272,6 +272,7 @@ export class TaskManager {
     chrome.tabs.sendMessage(tabId, {
       type: 'TRIGGER_CHANGE_SITE',
       taskId: taskId,
+      taskToUpdate: taskToUpdate,
       siteId: siteId
     });
 

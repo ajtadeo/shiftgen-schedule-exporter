@@ -34,8 +34,9 @@ export class TaskManager {
           } else if (this.state === STATE.CREATE_TAB_PROVIDER) {
             this.triggerChangeSite(taskId, sender.tab.id);
           } else if (this.state === STATE.CHANGE_SITE_USER) {
-            this.state = STATE.RUNNING;
-            this.triggerTask(TASKS.USER.id, sender.tab.id)
+            this.state = STATE.NAVIGATING;
+            const url = await this.getTargetUrl();
+            this.triggerNavigation(taskId, sender.tab.id, url);
           } else if (this.state === STATE.CHANGE_SITE_PA) {
             this.state = STATE.COLLECT_SCHEDULES;
             this.triggerCollectSchedules(TASKS.PA.id, sender.tab.id);
@@ -94,15 +95,7 @@ export class TaskManager {
     this.pendingSchedules = [];
     await chrome.storage.local.set({ shifts: {} });
 
-    const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
-    const targetMonth = localStorage.target_month;
-    const targetYear = localStorage.target_year;
-    const date = new Date(`${targetMonth} 1, ${targetYear}`);
-    const month = date.getMonth() + 1;
-
-    // https://www.shiftgen.com/member/multi_site_schedule?month_id=10&year_id=2025
-    const url = TASKS.USER.url + `?month_id=${month}&year_id=${targetYear}`
-    this.createTab(TASKS.USER.id, url);
+    this.createTab(TASKS.USER.id, TASKS.USER.url);
   }
 
   /**
@@ -221,7 +214,7 @@ export class TaskManager {
    */
   handlePendingSchedules(taskId, tabId) {
     const scheduleUrl = this.pendingSchedules.pop();
-    this.triggerScheduleNav(taskId, tabId, scheduleUrl);
+    this.triggerNavigation(taskId, tabId, scheduleUrl);
   }
 
   /**
@@ -308,12 +301,12 @@ export class TaskManager {
   }
 
   /**
-   * Triggers a navigation to the target schedule
+   * Triggers a navigation to the target URL
    * @param {number} taskId Task ID
    * @param {number} tabId Tab ID
    * @param {string} url URL to set the tab with Tab ID to
    */
-  triggerScheduleNav(taskId, tabId, url) {
+  triggerNavigation(taskId, tabId, url) {
     chrome.tabs.update(tabId, { url: url });
 
     this.taskStates[taskId] = {
@@ -341,5 +334,21 @@ export class TaskManager {
     };
 
     console.log(`Task ${taskId} triggered to collect schedules in tab ${tabId}`);
+  }
+
+  /**
+   * @brief Gets the URL for the target month and year currently in local storage
+   * @returns Target month and year URL
+   */
+  async getTargetUrl() {
+    const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
+    const targetMonth = localStorage.target_month;
+    const targetYear = localStorage.target_year;
+    const date = new Date(`${targetMonth} 1, ${targetYear}`);
+    const month = date.getMonth() + 1;
+
+    // https://www.shiftgen.com/member/multi_site_schedule?month_id=10&year_id=2025
+    const url = TASKS.USER.url + `?month_id=${month}&year_id=${targetYear}`
+    return url;
   }
 }

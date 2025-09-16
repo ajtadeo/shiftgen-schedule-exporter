@@ -216,8 +216,12 @@ export class Scraper {
    */
   getAllShifts() {
     let shifts = [];
-
-    const shiftCells = document.querySelectorAll("#calendar .shift-cell");
+    let shiftCells = []
+    if (this.taskId === TASKS.USER.id) {
+      shiftCells = document.querySelectorAll(".flex-1.p-4.overflow-scroll #calendar .shift-cell");
+    } else {
+      shiftCells = document.querySelectorAll("#calendar .shift-cell");
+    }
     for (let cell of shiftCells) {
       const s = this.parseShiftCell(cell);
       if (s !== undefined) {
@@ -353,12 +357,13 @@ export class Scraper {
   }
 
   /**
-   * @brief Checks the existence of the calendar element. If it doesn't exist,
-   * then then a failure should be signaled to the TaskManager.
+   * @brief Checks the existence of the calendar element on the user's multi
+   * site schedule. If it doesn't exist, then then a failure should be signaled
+   * to the TaskManager.
    * @returns True if calendar exists, false otherwise
    */
   checkCalendarExistence() {
-    if (document.querySelector("#calendar") === null) {
+    if (document.querySelector(".flex-1.p-4.overflow-scroll #calendar") === null) {
       console.error(`Task ${this.taskId} failed:`, "No user shifts available");
       chrome.runtime.sendMessage({
         type: 'TASK_FAILED',

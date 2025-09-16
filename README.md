@@ -32,6 +32,4 @@ Open the extension popup to examine the processed shift data. To export the data
 
 ## Workflow
 
-<div style="text-align:center">
-  <img src="public/images/workflow.png" alt="Scraping workflow" width="600" >
-</div>
+![Scraping workflow](public/images/workflow.png)

@@ -21,14 +21,19 @@ export class Shift {
    * @param {boolean} overnight Overnight flag, true if overnight else false
    * @param {string} providerType Provider type
    * @param {string} providerName Provider name 
+   * @param {string} doctorAtBat Doctor on shift for PA shifts only
+   * @param {string} doctorOnDeck Doctor assigned to the next shift
    */
-  constructor(startTime, endTime, location, overnight, providerType, providerName) {
+  constructor(startTime, endTime, location, overnight, providerType,
+              providerName, doctorAtBat="", doctorOnDeck="") {
     this.startTime = startTime;                // epoch ms (int)
     this.endTime = endTime;                    // epoch ms (int)
     this.location = location;                  // string
     this.overnight = overnight;                // bool
     this.providerType = providerType;          // int
     this.providerName = providerName;          // string
+    this.doctorAtBat = doctorAtBat;            // string
+    this.doctorOnDeck = doctorOnDeck;          // string
   }
 
   /**
@@ -43,7 +48,9 @@ export class Shift {
       "location": this.location,
       "overnight": this.overnight,
       "providerType": this.providerType,
-      "providerName": this.providerName
+      "providerName": this.providerName,
+      "doctorAtBat": this.doctorAtBat,
+      "doctorOnDeck": this.doctorOnDeck
     }
   }
 
@@ -66,7 +73,9 @@ export class Shift {
       location: this.location,
       startTime: this.startTime,
       endTime: this.endTime,
-      overnight: this.overnight
+      overnight: this.overnight,
+      doctorAtBat: this.doctorAtBat,
+      doctorOnDeck: this.doctorOnDeck
     })
   }
 }
@@ -222,9 +231,17 @@ export class Scraper {
     } else {
       shiftCells = document.querySelectorAll("#calendar .shift-cell");
     }
+
+    // TODO assign prevprevshift so we can keep track of in the hole. need to check times
+    let prevShift = undefined;
+    let prevPrevShift = undefined;
     for (let cell of shiftCells) {
       const s = this.parseShiftCell(cell);
       if (s !== undefined) {
+        if (this.taskId === TASKS.DOCTOR.id && prevShift !== undefined) {
+          s.doctorOnDeck = prevShift.providerName;
+        }
+        prevShift = s;
         shifts.push(s);
       }
     }
@@ -265,7 +282,7 @@ export class Scraper {
     }
 
     if (match === null) {
-      console.log("Info could not be parsed:", infoStr);
+      // console.log("Info could not be parsed:", infoStr);
       return undefined;
     }
 

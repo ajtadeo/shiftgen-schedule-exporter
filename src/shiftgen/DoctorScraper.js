@@ -36,22 +36,37 @@ export class DoctorScraper extends Scraper {
       }
 
       let maxOverlap = 0;
-      let maxOverlapShift = undefined;
+      let maxOverlapDoctorShift = undefined;
+      let maxOverlapAtBat = 0;
+      let maxOverlapAtBatShift = undefined;
 
       for (const shift of shifts) {
-        // doctor shifts occur in the same location as the user
         if (userShift.location === shift.location) {
+          // doctor shifts occur in the same location as the user
           let overlap = this.getOverlap(userShift, shift)
           if (overlap > maxOverlap) {
             maxOverlap = overlap;
-            maxOverlapShift = shift;
+            maxOverlapDoctorShift = shift;
+          }
+        } else if (userShift.location === "PA") {
+          // on deck doctor occurs in the PA location
+          let overlap = this.getOverlap(userShift, shift)
+          if (overlap > maxOverlapAtBat) {
+            maxOverlapAtBat = overlap;
+            maxOverlapAtBatShift = shift;
           }
         }
       }
 
-      if (maxOverlapShift !== undefined) {
-        localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.providerName;
+      if (maxOverlapDoctorShift !== undefined) {
+        localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapDoctorShift.providerName;
         localStorage["shifts"][userShift.startTime]["providerType"] = TASKS.DOCTOR.id;
+        localStorage["shifts"][userShift.startTime]["doctorOnDeck"] = maxOverlapDoctorShift.doctorOnDeck;
+      }
+
+      if (maxOverlapAtBatShift !== undefined) {
+        localStorage["shifts"][userShift.startTime]["doctorAtBat"] = maxOverlapAtBatShift.providerName;
+        localStorage["shifts"][userShift.startTime]["doctorOnDeck"] = maxOverlapAtBatShift.doctorOnDeck;
       }
     }
 

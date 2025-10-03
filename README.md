@@ -33,3 +33,13 @@ Open the extension popup to examine the processed shift data. To export the data
 ## Workflow
 
 ![Scraping workflow](public/images/workflow.png)
+
+
+Basically it’s referring to the docs in the main zone
+
+At Bat = The docs who are working right now (only for PA shifts only)
+
+On-Deck = the doc coming on for the shift change
+
+TODO: in the hole
+In The Hole = The doc coming on after the first shift change (this only occurs when I’m working the 2030-0500, 1600-0030, or 1900-0330 shift)

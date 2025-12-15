@@ -5,6 +5,7 @@
 
 import { TASKS } from "./common.js";
 
+/** @brief Regex patterns used for parsing shift information */
 const patterns = {
   1: { pattern: /^(?!SJH)(?!PIT)(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4})$/, groupNames: ["location", "start_time_str", "end_time_str"] }, // North 2130-0600
   2: { pattern: /^(\d{2}|\d{4})-(\d{2}|\d{4})\s\((\w+)\)$/, groupNames: ["start_time_str", "end_time_str", "location"] }, // 1700-0100 (RED)
@@ -23,17 +24,21 @@ export class Shift {
    * @param {string} providerName Provider name 
    * @param {string} paDoctor Doctor on shift for PA shifts only
    * @param {string} doctorNextShift Doctor assigned to the next shift
+   * @param {string} overnightNextDoctor Doctor assigned after 2030-0500, 1600-0030, or 1900-0330 scribe shifts
    */
-  constructor(startTime, endTime, location, overnight, providerType,
-              providerName, paDoctor="", doctorNextShift="") {
-    this.startTime = startTime;                // epoch ms (int)
-    this.endTime = endTime;                    // epoch ms (int)
-    this.location = location;                  // string
-    this.overnight = overnight;                // bool
-    this.providerType = providerType;          // int
-    this.providerName = providerName;          // string
-    this.paDoctor = paDoctor;                  // string
-    this.doctorNextShift = doctorNextShift;    // string
+  constructor(info, startTime, endTime, location, overnight, providerType,
+              providerName, paDoctor="", doctorNextShift="",
+              overnightNextDoctor = "") 
+  {
+    this.startTime = startTime;                     // epoch ms (int)
+    this.endTime = endTime;                         // epoch ms (int)
+    this.location = location;                       // string
+    this.overnight = overnight;                     // bool
+    this.providerType = providerType;               // int
+    this.providerName = providerName;               // string
+    this.paDoctor = paDoctor;                       // string
+    this.doctorNextShift = doctorNextShift;         // string
+    this.overnightNextDoctor = overnightNextDoctor  // string
   }
 
   /**
@@ -75,7 +80,8 @@ export class Shift {
       endTime: this.endTime,
       overnight: this.overnight,
       paDoctor: this.paDoctor,
-      doctorNextShift: this.doctorNextShift
+      doctorNextShift: this.doctorNextShift,
+      overnightNextDoctor: this.overnightNextDoctor
     })
   }
 }
@@ -232,7 +238,8 @@ export class Scraper {
       shiftCells = document.querySelectorAll("#calendar .shift-cell");
     }
 
-    // TODO assign prevprevshift so we can keep track of in the hole. need to check times
+    // Iterate over the shifts in order from latest in the month (i.e. Oct 31)
+    // to earliest in the month (i.e. Oct 1)
     let prevShift = undefined;
     let prevPrevShift = undefined;
     for (let cell of shiftCells) {
@@ -241,6 +248,11 @@ export class Scraper {
         if (this.taskId === TASKS.DOCTOR.id && prevShift !== undefined) {
           s.doctorNextShift = prevShift.providerName;
         }
+        if (this.taskId === TASKS.DOCTOR.id && prevPrevShift !== undefined && s.overnight) {
+          s.overnightNextDoctor = prevPrevShift.providerName;
+        }
+
+        prevPrevShift = prevShift !== undefined ? prevShift : undefined;
         prevShift = s;
         shifts.push(s);
       }

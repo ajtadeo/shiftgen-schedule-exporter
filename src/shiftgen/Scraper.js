@@ -21,19 +21,19 @@ export class Shift {
    * @param {boolean} overnight Overnight flag, true if overnight else false
    * @param {string} providerType Provider type
    * @param {string} providerName Provider name 
-   * @param {string} doctorAtBat Doctor on shift for PA shifts only
-   * @param {string} doctorOnDeck Doctor assigned to the next shift
+   * @param {string} paDoctor Doctor on shift for PA shifts only
+   * @param {string} doctorNextShift Doctor assigned to the next shift
    */
   constructor(startTime, endTime, location, overnight, providerType,
-              providerName, doctorAtBat="", doctorOnDeck="") {
+              providerName, paDoctor="", doctorNextShift="") {
     this.startTime = startTime;                // epoch ms (int)
     this.endTime = endTime;                    // epoch ms (int)
     this.location = location;                  // string
     this.overnight = overnight;                // bool
     this.providerType = providerType;          // int
     this.providerName = providerName;          // string
-    this.doctorAtBat = doctorAtBat;            // string
-    this.doctorOnDeck = doctorOnDeck;          // string
+    this.paDoctor = paDoctor;                  // string
+    this.doctorNextShift = doctorNextShift;    // string
   }
 
   /**
@@ -49,8 +49,8 @@ export class Shift {
       "overnight": this.overnight,
       "providerType": this.providerType,
       "providerName": this.providerName,
-      "doctorAtBat": this.doctorAtBat,
-      "doctorOnDeck": this.doctorOnDeck
+      "paDoctor": this.paDoctor,
+      "doctorNextShift": this.doctorNextShift
     }
   }
 
@@ -74,8 +74,8 @@ export class Shift {
       startTime: this.startTime,
       endTime: this.endTime,
       overnight: this.overnight,
-      doctorAtBat: this.doctorAtBat,
-      doctorOnDeck: this.doctorOnDeck
+      paDoctor: this.paDoctor,
+      doctorNextShift: this.doctorNextShift
     })
   }
 }
@@ -239,7 +239,7 @@ export class Scraper {
       const s = this.parseShiftCell(cell);
       if (s !== undefined) {
         if (this.taskId === TASKS.DOCTOR.id && prevShift !== undefined) {
-          s.doctorOnDeck = prevShift.providerName;
+          s.doctorNextShift = prevShift.providerName;
         }
         prevShift = s;
         shifts.push(s);

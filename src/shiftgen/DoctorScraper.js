@@ -37,8 +37,8 @@ export class DoctorScraper extends Scraper {
 
       let maxOverlap = 0;
       let maxOverlapDoctorShift = undefined;
-      let maxOverlapAtBat = 0;
-      let maxOverlapAtBatShift = undefined;
+      let maxOverlapPaDoctor = 0;
+      let maxOverlapPaDoctorShift = undefined;
 
       for (const shift of shifts) {
         if (userShift.location === shift.location) {
@@ -49,11 +49,11 @@ export class DoctorScraper extends Scraper {
             maxOverlapDoctorShift = shift;
           }
         } else if (userShift.location === "PA") {
-          // on deck doctor occurs in the PA location
+          // PA doctor occurs in the PA location
           let overlap = this.getOverlap(userShift, shift)
-          if (overlap > maxOverlapAtBat) {
-            maxOverlapAtBat = overlap;
-            maxOverlapAtBatShift = shift;
+          if (overlap > maxOverlapPaDoctor) {
+            maxOverlapPaDoctor = overlap;
+            maxOverlapPaDoctorShift = shift;
           }
         }
       }
@@ -61,12 +61,12 @@ export class DoctorScraper extends Scraper {
       if (maxOverlapDoctorShift !== undefined) {
         localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapDoctorShift.providerName;
         localStorage["shifts"][userShift.startTime]["providerType"] = TASKS.DOCTOR.id;
-        localStorage["shifts"][userShift.startTime]["doctorOnDeck"] = maxOverlapDoctorShift.doctorOnDeck;
+        localStorage["shifts"][userShift.startTime]["doctorNextShift"] = maxOverlapDoctorShift.doctorNextShift;
       }
 
-      if (maxOverlapAtBatShift !== undefined) {
-        localStorage["shifts"][userShift.startTime]["doctorAtBat"] = maxOverlapAtBatShift.providerName;
-        localStorage["shifts"][userShift.startTime]["doctorOnDeck"] = maxOverlapAtBatShift.doctorOnDeck;
+      if (maxOverlapPaDoctorShift !== undefined) {
+        localStorage["shifts"][userShift.startTime]["paDoctor"] = maxOverlapPaDoctorShift.providerName;
+        localStorage["shifts"][userShift.startTime]["doctorNextShift"] = maxOverlapPaDoctorShift.doctorNextShift;
       }
     }
 

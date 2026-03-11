@@ -3,4 +3,5 @@
  * @brief Sets up global Jest variables
  */
 
-Object.assign(global, require('jest-chrome'))
+import { chrome } from 'jest-chrome';
+Object.assign(global, { chrome });

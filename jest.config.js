@@ -3,8 +3,9 @@
  * @brief Jest config
  */
 
-module.exports = {
-  setupFilesAfterEnv: ['./jest.setup.js'],
-  preset: "jest-puppeteer",
-  testMatch: ["**/tests/src/*.test.js"]
+export default {
+  testEnvironment: "jest-environment-jsdom",
+  setupFilesAfterEnv: ["./jest.setup.js"],
+  testMatch: ["**/test/**/*.test.js"],
+  transform: {},
 };

@@ -33,3 +33,12 @@ Open the extension popup to examine the processed shift data. To export the data
 ## Workflow
 
 ![Scraping workflow](public/images/workflow.png)
+
+## Testing
+
+To run the unit tests, execute the following:
+
+```sh
+npm install # install node packages
+npm test
+```

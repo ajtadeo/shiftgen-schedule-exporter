@@ -1,3 +1,8 @@
+/**
+ * @file userContentScript.js
+ * @brief Content script injected into the admin page
+ */
+
 (async () => {
   const userScraper = await import(chrome.runtime.getURL('src/shiftgen/UserScraper.js'));
   const paScraper = await import(chrome.runtime.getURL('src/shiftgen/PaScraper.js'));

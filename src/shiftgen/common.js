@@ -1,4 +1,8 @@
-// Tasks
+/**
+ * @file common.js
+ * @brief Common constants and objects used across the application
+ */
+
 export const TASKS = {
   USER: {
     id: 0,

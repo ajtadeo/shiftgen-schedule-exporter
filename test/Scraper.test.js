@@ -2,10 +2,9 @@
  * @file Scraper.test.js
  * @brief Tests base scraper class and shift class
  */
-import fs from "fs";
-import path from "path";
 import { Scraper, Shift } from "../src/shiftgen/Scraper.js";
 import { TASKS } from "../src/shiftgen/common.js";
+import { loadHtml } from "./scraperTestHelpers.js";
 
 /**
  * @brief Builds a minimal shift cell element with the given attributes.
@@ -22,17 +21,16 @@ function makeShiftCell(nameValue, shiftKey, assignee) {
   return cell;
 }
 
-beforeAll(() => {
-  const filePath = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    "html/user_calendar.html"
-  );
-  const html = fs.readFileSync(filePath, "utf8");
-  document.documentElement.innerHTML = html;
+beforeEach(() => {
+  document.documentElement.innerHTML = loadHtml("user_calendar.html");
+});
+
+afterEach(() => {
+  document.documentElement.innerHTML = "";
 });
 
 // ===========================================================================
-// Shift class
+// Shift
 // ===========================================================================
 
 describe("Shift", () => {
@@ -69,7 +67,7 @@ describe("Shift", () => {
 });
 
 // ===========================================================================
-// Scraper class
+// Scraper
 // ===========================================================================
 
 describe("Scraper", () => {

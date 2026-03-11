@@ -43,6 +43,10 @@ beforeEach(() => {
   chrome.tabs.update.mockResolvedValue(undefined);
 });
 
+afterEach(() => {
+  document.documentElement.innerHTML = "";
+});
+
 // ===========================================================================
 // Constructor
 // ===========================================================================

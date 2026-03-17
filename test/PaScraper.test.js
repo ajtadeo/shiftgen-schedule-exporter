@@ -3,12 +3,13 @@
  * @brief Tests for PaScraper
  *
  * HTML fixture: pa_calendar.html
- *   - 233 cells, 130 parseable
- *   - Shift name patterns: "CHOC 0600-1600", "SJH 1000-2000", "FLEX 1200-2200" etc.
+ *   - 234 cells, 129 parseable CHOC shifts (excludes 104 SJH shifts)
+ *   - Shift name patterns: "CHOC 0600-1600", "FLEX 1200-2200", "RED 1500-2400" etc.
+ *   - SJH shifts (e.g. "SJH 1000-2000") are skipped and must never appear in results.
  *
  * Key confirmed overlaps from pa_calendar.html:
- *   epoch 1759741200000  FLEX  => GO     (7.0h overlap)
- *   epoch 1760112000000  PA    => MARONY (8.5h overlap)
+ *   epoch 1759755600000  FLEX  => GO     (8.0h overlap)
+ *   epoch 1760137200000  PA    => MARONY (8.5h overlap)
  *
  * Critical behavioral difference vs DoctorScraper:
  *   PaScraper does NOT filter candidates by location — any overlapping PA shift wins.
@@ -46,7 +47,7 @@ describe("PaScraper with pa_calendar.html", () => {
   // --- scrape ---
 
   test("scrape() assigns MARONY to a PA-location user shift (8.5h overlap)", async () => {
-    const key = 1760112000000;
+    const key = 1760137200000;
     chrome.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
@@ -58,14 +59,14 @@ describe("PaScraper with pa_calendar.html", () => {
     expect(stored[key].providerType).toBe(TASKS.PA.id);
   });
 
-  test("scrape() assigns GO to the FLEX user shift (7h overlap)", async () => {
-    const key = 1759741200000;
+    test("scrape() assigns GO to a CHOC 0600-1600 user shift (8h overlap)", async () => {
+    const key = 1759755600000;
     chrome.storage.local.get.mockResolvedValue({
-      shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX") }
+      shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "CHOC") }
     });
-
+ 
     await new PaScraper().scrape();
-
+ 
     const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("GO");
     expect(stored[key].providerType).toBe(TASKS.PA.id);
@@ -77,7 +78,7 @@ describe("PaScraper with pa_calendar.html", () => {
   });
 
   test("scrape() skips already-claimed shifts", async () => {
-    const key = 1760112000000;
+    const key = 1760137200000;
     chrome.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA", "ALREADY", TASKS.DOCTOR.id) }
     });
@@ -89,7 +90,7 @@ describe("PaScraper with pa_calendar.html", () => {
   });
 
   test("scrape() returns { success: true, timestamp: number }", async () => {
-    const key = 1760112000000;
+    const key = 1760137200000;
     chrome.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
@@ -101,7 +102,7 @@ describe("PaScraper with pa_calendar.html", () => {
 
   // --- getAllShifts ---
 
-  test("getAllShifts returns 130 Shift instances from pa_calendar.html", () => {
+  test("getAllShifts returns 130 Shift instances from pa_calendar.html (excludes SJH, PIT)", () => {
     const shifts = new PaScraper().getAllShifts();
     expect(shifts.length).toBe(130);
     shifts.forEach(s => expect(s).toBeInstanceOf(Shift));
@@ -111,6 +112,35 @@ describe("PaScraper with pa_calendar.html", () => {
     new PaScraper().getAllShifts().forEach(s =>
       expect(s.providerType).toBe(TASKS.PA.id)
     );
+  });
+
+  // --- SJH filtering ---
+
+  test("getAllShifts skips shifts whose name contains 'SJH'", () => {
+    // pa_calendar.html contains 104 SJH shifts — none should appear in results
+    const shifts = new PaScraper().getAllShifts();
+    shifts.forEach(s => expect(s.location).not.toBe("SJH"));
+  });
+
+  test("scrape() does not assign a provider found only on a skipped SJH shift", async () => {
+    // Inject a user shift that would only overlap with an SJH time window.
+    // Even if an SJH-named PA shift perfectly overlaps, it must be invisible.
+    const base      = Date.UTC(2025, 9, 6);
+    const userStart = base + 10 * 3600_000; // 10:00
+    const userEnd   = base + 20 * 3600_000; // 20:00
+
+    const sjhOnly = new Shift(userStart, userEnd, "SJH", false, TASKS.PA.id, "SJHPA");
+    const scraper = new PaScraper();
+    scraper.getAllShifts = () => [];          // getAllShifts correctly returns nothing for SJH
+
+    chrome.storage.local.get.mockResolvedValue({
+      shifts: { [userStart]: makeStoredShift(userStart, userEnd, "CHOC") }
+    });
+
+    await scraper.scrape();
+
+    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    expect(stored[userStart].providerName).toBe("");
   });
 });
 
@@ -125,7 +155,7 @@ describe("PaScraper overlap selection logic (unit)", () => {
 
   test("matches PA shifts WITHOUT a location filter", async () => {
     // Key difference from DoctorScraper: location is irrelevant for PA matching
-    const base      = new Date(2025, 9, 6).getTime();
+    const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
     const paShift   = new Shift(userStart, userStart + 8 * 3600_000, "CHOC", false, TASKS.PA.id, "TESTPA");
 
@@ -142,7 +172,7 @@ describe("PaScraper overlap selection logic (unit)", () => {
   });
 
   test("picks the PA shift with the greatest overlap", async () => {
-    const base      = new Date(2025, 9, 6).getTime();
+    const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
     const userEnd   = base + 16 * 3600_000;
     const small     = new Shift(base + 6 * 3600_000, base + 10 * 3600_000, "SJH",  false, TASKS.PA.id, "SMALLPA");
@@ -160,7 +190,7 @@ describe("PaScraper overlap selection logic (unit)", () => {
   });
 
   test("does not assign when no PA shift overlaps", async () => {
-    const base      = new Date(2025, 9, 6).getTime();
+    const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
     const noOverlap = new Shift(base + 20 * 3600_000, base + 24 * 3600_000, "SJH", false, TASKS.PA.id, "GHOST");
 
@@ -176,7 +206,7 @@ describe("PaScraper overlap selection logic (unit)", () => {
   });
 
   test("handles multiple user shifts independently", async () => {
-    const base       = new Date(2025, 9, 6).getTime();
+    const base       = Date.UTC(2025, 9, 6);
     const user1Start = base + 8  * 3600_000;
     const user2Start = base + 20 * 3600_000;
     const pa1 = new Shift(user1Start, user1Start + 8 * 3600_000, "SJH",  false, TASKS.PA.id, "PA_DAY");

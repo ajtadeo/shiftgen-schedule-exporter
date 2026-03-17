@@ -286,8 +286,8 @@ export class Scraper {
     }
 
     // Get start and end times
-    const monthNumber = new Date(`${month} ${day}, ${year}`).getMonth();
-    const startTime = new Date(
+    const monthNumber = parseInt(month) - 1; // shift-key month is 1-indexed
+    let startTime = this.pacificToUtcMs(
       parseInt(year),
       monthNumber,
       parseInt(day),
@@ -295,7 +295,7 @@ export class Scraper {
       parseInt(info["start_time_str"].slice(2)),
       0
     );
-    const endDateTime = new Date(
+    let endTime = this.pacificToUtcMs(
       parseInt(year),
       monthNumber,
       parseInt(day),
@@ -308,7 +308,7 @@ export class Scraper {
     let overnight = false;
     if (parseInt(info["end_time_str"].slice(0, 2)) < parseInt(info["start_time_str"].slice(0, 2))) {
       overnight = true;
-      endDateTime.setDate(endDateTime.getDate() + 1)
+      endTime += 24 * 3600_000; // add one day in ms
     }
 
     // Rename providers
@@ -322,8 +322,8 @@ export class Scraper {
 
     if (this.taskId === TASKS.USER.id) {
       return new Shift(
-        startTime.getTime(),
-        endDateTime.getTime(),
+        startTime,
+        endTime,
         info["location"].trim().toUpperCase(),
         overnight,
         TASKS.USER.id,
@@ -331,8 +331,8 @@ export class Scraper {
       )
     } else {
       return new Shift(
-        startTime.getTime(),
-        endDateTime.getTime(),
+        startTime,
+        endTime,
         info["location"].trim().toUpperCase(),
         overnight,
         this.providerType,
@@ -374,5 +374,37 @@ export class Scraper {
     } else {
       return true;
     }
+  }
+
+  /**
+   * @brief Converts a Pacific local wall-clock time to a UTC epoch (ms).
+   * Correctly handles PST (UTC-8) and PDT (UTC-7) based on the actual date.
+   *
+   * @param {number} year
+   * @param {number} month   0-indexed (January = 0)
+   * @param {number} day
+   * @param {number} hour
+   * @param {number} minute
+   * @returns {number} UTC epoch in milliseconds
+   */
+  pacificToUtcMs(year, month, day, hour, minute) {
+    // First pass: treat wall-clock as UTC to get approximate offset
+    const utcGuess = Date.UTC(year, month, day, hour, minute, 0);
+    const getOffset = (ms) => {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Los_Angeles",
+        hour: "numeric",
+        hour12: false,
+        timeZoneName: "shortOffset"
+      }).formatToParts(new Date(ms));
+      return parseInt(parts.find(p => p.type === "timeZoneName").value.replace("GMT", ""));
+    };
+
+    const offsetHours = getOffset(utcGuess);
+    const firstPass = utcGuess - offsetHours * 3600_000;
+
+    // Second pass: verify offset using the corrected UTC time (handles DST boundary)
+    const finalOffsetHours = getOffset(firstPass);
+    return utcGuess - finalOffsetHours * 3600_000;
   }
 }

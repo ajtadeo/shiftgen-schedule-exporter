@@ -95,8 +95,8 @@ window.onload = async function () {
   const template = document.querySelector("#shift-template");
   for (const [key, value] of Object.entries(shifts)) {
     const clone = template.content.cloneNode(true);
-    clone.querySelector(".shift-start").textContent = new Date(value.startTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false });
-    clone.querySelector(".shift-end").textContent = new Date(value.endTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false });
+    clone.querySelector(".shift-start").textContent = new Date(value.startTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
+    clone.querySelector(".shift-end").textContent = new Date(value.endTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
     clone.querySelector(".shift-location").textContent = value.location;
     clone.querySelector(".shift-provider-name").textContent = value.providerName;
 
@@ -158,7 +158,7 @@ window.onload = async function () {
   }); 
 
   // handle target year form submission
-  const currentYear = new Date().getFullYear();
+  const currentYear = parseInt(new Date().toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", year: "numeric" }));
   const nextYear = currentYear + 1;
 
   let currentYearElement = document.createElement("option")

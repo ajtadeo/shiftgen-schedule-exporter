@@ -22,7 +22,6 @@ export class TaskManager {
     this.taskStates = workflow.taskStates;
     this.pendingSchedules = workflow.pendingSchedules;    
     this.saveTimer;
-    console.log("Restored TaskManager state:", workflow);
   }
 
   /**
@@ -414,8 +413,7 @@ export class TaskManager {
     const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
     const targetMonth = localStorage.target_month;
     const targetYear = localStorage.target_year;
-    const date = new Date(`${targetMonth} 1, ${targetYear}`);
-    const month = date.getMonth() + 1;
+    const month = new Date(`${targetMonth} 1, ${targetYear} 00:00:00 GMT-0000`).getUTCMonth() + 1;  // shift-key month is 1-indexed
 
     // https://www.shiftgen.com/member/multi_site_schedule?month_id=10&year_id=2025
     const url = TASKS.USER.url + `?month_id=${month}&year_id=${targetYear}`

@@ -37,8 +37,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.set({
       shifts: {},
       calendar_id: "",
-      target_month: new Date().toLocaleString('default', { month: 'long' }),
-      target_year: new Date().getFullYear(),
+      target_month: Date.UTC().toLocaleString('default', { month: 'long' }),
+      target_year: Date.UTC().getFullYear(),
       workflow: {
         state: STATE.IDLE,
         taskStates: {

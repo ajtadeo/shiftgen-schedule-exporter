@@ -1,6 +1,6 @@
 /**
  * @file common.js
- * @brief Common constants and objects used across the application
+ * @brief Common constants, objects, and functions used across the application
  */
 
 export const TASKS = {
@@ -35,4 +35,37 @@ export const STATE = {
   NAVIGATING: 7,
   RUNNING: 8,
   COMPLETED: 9,
+}
+
+export const MESSAGE_TYPE = {
+  INFO: 0,
+  ERROR: 1
+}
+
+export function infoBadge(message = "", icon) {
+  if (message) {
+    chrome.storage.local.get(["messages"], (result) => {
+      const messages = result.messages || [];
+      messages.push({message: message, type: MESSAGE_TYPE.INFO});
+      chrome.storage.local.set({ messages });
+    });
+  }
+  chrome.action.setBadgeText({ text: icon });
+  chrome.action.setBadgeBackgroundColor({ color: "#9DCAA0" });
+}
+
+export function errorBadge(message = "") {
+  if (message) {
+    chrome.storage.local.get(["messages"], (result) => {
+      const messages = result.messages || [];
+      messages.push({message: message, type: MESSAGE_TYPE.ERROR});
+      chrome.storage.local.set({ messages });
+    });
+  }
+  chrome.action.setBadgeText({ text: "ERR" });
+  chrome.action.setBadgeBackgroundColor({ color: "#EF4444" });
+}
+
+export function clearBadge() {
+  chrome.action.setBadgeText({ text: "" });
 }

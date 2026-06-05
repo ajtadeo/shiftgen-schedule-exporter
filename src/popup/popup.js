@@ -3,59 +3,55 @@
  * @brief JavaScript for extension popup.
  */
 
-import { TASKS } from "../shiftgen/common.js";
+import { TASKS, infoBadge, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
 
+/**
+ * @brief Main window onload function.
+ */
 window.onload = async function () {
+  // handle incoming messages in local storage
+  clearBadge();
+  await displayMessages();
+
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
     let localStorage = await chrome.storage.local.get(["shifts", "calendar_id"]);
 
     if (localStorage.calendar_id === "") {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '../../public/icons/icon_32.png',
-        title: 'ShiftGen Schedule Exporter',
-        message: "Please set Calendar ID before exporting to Google Calendar.",
-        priority: 0
-      }); 
+      errorBadge();
+      addErrorMessage("Please set Calendar ID before exporting to Google Calendar.");
       return;
     }
-    
+
+    document.querySelector("#google-calendar-export-button").disabled = true;
     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
       let shifts = localStorage.shifts;
       let calendarId = localStorage.calendar_id;
       let postedAllEvents = true;
+      let errorMessage = "";
       for (const [key, value] of Object.entries(shifts)) {
-        let result = exportToGoogleCalendar(token, calendarId, value);
+        let [result, err] = await exportToGoogleCalendar(token, calendarId, value);
         if (result === false) {
           postedAllEvents = false;
+          errorMessage = err;
           break;
         }
       }
 
       if (!postedAllEvents) {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: '../../public/icons/icon_32.png',
-          title: 'ShiftGen Schedule Exporter',
-          message: "Failed to export shifts to Google Calendar. Please try again.",
-          priority: 0
-        }); 
+        errorBadge();
+        addErrorMessage(`Failed to export shifts to Google Calendar: ${errorMessage}. Please try again.`);
       } else {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: '../../public/icons/icon_32.png',
-          title: 'ShiftGen Schedule Exporter',
-          message: "Successfully exported shifts to Google Calendar!",
-          priority: 0
-        }); 
+        infoBadge("Successfully exported shifts to Google Calendar!", "🪁");
       }
+
+      document.querySelector("#google-calendar-export-button").disabled = false;
 
       // SANITY CHECK
       // for (const [key, value] of Object.entries(TEST_SHIFTS)) {
-      //   exportToGoogleCalendar(token, value)
+      //   await exportToGoogleCalendar(token, value)
       // }
-    })
+    });
   });
 
   // setup automatic website scraper for all shifts
@@ -63,31 +59,21 @@ window.onload = async function () {
     let localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
 
     if (localStorage.target_month === "") {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '../../public/icons/icon_32.png',
-        title: 'ShiftGen Schedule Exporter',
-        message: "Please set target month before scraping shifts.",
-        priority: 0
-      }); 
+      errorBadge();
+      addErrorMessage("Please set target month before scraping shifts.");
       return;
     }
 
     if (localStorage.target_year === "") {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '../../public/icons/icon_32.png',
-        title: 'ShiftGen Schedule Exporter',
-        message: "Please set target year before scraping shifts.",
-        priority: 0
-      }); 
+      errorBadge();
+      addErrorMessage("Please set target year before scraping shifts.");
       return;
-    } 
+    }
 
     // Start task workflow
     chrome.runtime.sendMessage({ type: 'START' });
   })
-  
+
   // populate shifts table
   let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month", "target_year"]);
   let shifts = localStorage.shifts;
@@ -122,7 +108,7 @@ window.onload = async function () {
   document.querySelector("#calendar-id-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const calendarId = document.getElementById("calendar-id-input").value;
-  
+
     await chrome.storage.local.set({ "calendar_id": calendarId }, function() {
       if (chrome.runtime.lastError) {
         document.querySelector("#calendar-id-message").textContent = "Error: " + chrome.runtime.lastError;
@@ -131,11 +117,12 @@ window.onload = async function () {
         document.querySelector("#calendar-id-button").disabled = true;
         // document.querySelector("#calendar-id-input").disabled = true;
         document.querySelector("#calendar-id-message").style.visibility = "visible"
+        document.querySelector("#google-calendar-export-button").disabled = false;
         console.log("Calendar ID saved:", calendarId);
       }
     });
-  }); 
-  
+  });
+
   // handle target month form submission
   if (localStorage.target_month !== "") {
     document.querySelector("#target-month-select").value = localStorage.target_month;
@@ -144,7 +131,7 @@ window.onload = async function () {
   document.querySelector("#target-month-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const targetMonth = document.getElementById("target-month-select").value;
-  
+
     await chrome.storage.local.set({ "target_month": targetMonth }, function() {
       if (chrome.runtime.lastError) {
         document.querySelector("#target-month-message").textContent = "Error: " + chrome.runtime.lastError;
@@ -155,7 +142,7 @@ window.onload = async function () {
         console.log("Target Month saved:", targetMonth);
       }
     });
-  }); 
+  });
 
   // handle target year form submission
   const currentYear = parseInt(new Date().toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", year: "numeric" }));
@@ -177,7 +164,7 @@ window.onload = async function () {
   document.querySelector("#target-year-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const targetYear = document.getElementById("target-year-select").value;
-  
+
     await chrome.storage.local.set({ "target_year": targetYear }, function() {
       if (chrome.runtime.lastError) {
         document.querySelector("#target-year-message").textContent = "Error: " + chrome.runtime.lastError;
@@ -188,7 +175,7 @@ window.onload = async function () {
         console.log("Target Year saved:", targetYear);
       }
     });
-  }); 
+  });
 
   // setup clear shifts button
   document.querySelector("#clear-shifts").addEventListener("click", async () => {
@@ -213,11 +200,25 @@ window.onload = async function () {
     let noShiftsMessage = document.querySelector("#no-shifts-message")
     noShiftsMessage.style.display = "none";
   }
+
+  // handle error message close
+  document.querySelector("#messages").addEventListener("click", () => {
+    if (event.target.classList.contains('message-close-btn')) {
+      event.target.closest('.message').remove();
+    }
+  });
+
+  // handle badge clear on unload
+  // TODO: this isn't actually working right now
+  window.addEventListener("unload", () => {
+    clearBadge();
+  });
 };
+/////// window.onload
 
 // enable/disable scrape buttons based on status flags
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-  // fetch local storage variables 
+  // fetch local storage variables
   let localStorage = await chrome.storage.local.get(["calendar_id"]);
   let calendarId = localStorage.calendar_id;
 
@@ -226,13 +227,29 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   }
 });
 
+// listen for local storage changes to display new messages while popup open
+chrome.storage.onChanged.addListener(async (changes, area) => {
+  if (area !== "local" || !changes.messages) return;
+  const newMessages = changes.messages.newValue || [];
+  const oldMessages = changes.messages.oldValue || [];
+  // Only show messages that were just added
+  const added = newMessages.slice(oldMessages.length);
+  added.forEach(msg => {
+    if (msg.type === MESSAGE_TYPE.INFO) addInfoMessage(msg.message);
+    else if (msg.type === MESSAGE_TYPE.ERROR) addErrorMessage(msg.message);
+  });
+  await chrome.storage.local.set({ messages: [] });
+});
+
 /**
- * Sends a POST request to create a new event for shift in Google Calendar
- * @param {string} token 
+ * @brief Sends a POST request to create a new event for shift in Google Calendar
+ * @param {string} token
  * @param {string} calendarId
- * @param {object} shift 
+ * @param {object} shift
+ * @returns Tuple where the first item is true if exporting was successful, and
+ * the second item is an error message if unsuccessful.
  */
-function exportToGoogleCalendar(token, calendarId, shift) {
+async function exportToGoogleCalendar(token, calendarId, shift) {
   let event = {
     summary: `CHOC Scribe: ${shift.location} ${shift.providerName}`,
     description: 'Generated using Schedule Exporter for ShiftGen!',
@@ -256,17 +273,55 @@ function exportToGoogleCalendar(token, calendarId, shift) {
     body: JSON.stringify(event),
   };
 
-  fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
-    options
-  )
-  .then(response => {
-    return response.json();
-  }).then(data => {
-    // console.log(data)
-    return true;
-  }).catch(err => {
-    console.error(err)
-    return false;
-  });
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+      options
+    );
+    const data = await response.json();
+    return [true, ""];
+  } catch (err) {
+    return [false, err];
+  }
+}
+
+/**
+ * @brief Adds an error message to the top of the popup UI.
+ * @param {String} message Error message to display.
+ */
+function addErrorMessage(message) {
+  const msgs = document.querySelector("#messages");
+  const template = document.querySelector("#error-message-template");
+  const clone = template.content.cloneNode(true);
+  clone.querySelector(".error-message-text").textContent = message;
+  msgs.prepend(clone);
+}
+
+/**
+ * @brief Adds an info message to the top of the popup UI.
+ * @param {String} message Info message to display.
+ */
+function addInfoMessage(message) {
+  const msgs = document.querySelector("#messages");
+  const template = document.querySelector("#info-message-template");
+  const clone = template.content.cloneNode(true);
+  clone.querySelector(".info-message-text").textContent = message;
+  msgs.prepend(clone);
+}
+
+/**
+ * @brief Displays messages currently in local storage and then clears storage.
+ */
+async function displayMessages() {
+  const { messages } = await chrome.storage.local.get(["messages"]);
+  if (messages && messages.length > 0) {
+    messages.forEach((message) => {
+      if (message.type == MESSAGE_TYPE.INFO) {
+        addInfoMessage(message.message)
+      } else if (message.type === MESSAGE_TYPE.ERROR) {
+        addErrorMessage(message.message)
+      }
+    });
+    await chrome.storage.local.set({ messages: [] });
+  }
 }

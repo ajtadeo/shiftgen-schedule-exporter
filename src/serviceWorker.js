@@ -17,7 +17,7 @@ async function initTaskManager() {
   const saved = await chrome.storage.local.get("workflow");
   manager = new TaskManager(saved.workflow);
   ready = true;
-  
+
   // Process messages that were queued during initialization
   messageQueue.forEach(({ msg, sender, sendResponse }) => {
     manager.handleMessage(msg, sender, sendResponse);
@@ -34,11 +34,12 @@ initTaskManager();
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason == "install" || details.reason == "update") {
     // set local storage variables
+    let now = new Date;
     chrome.storage.local.set({
       shifts: {},
       calendar_id: "",
-      target_month: Date.UTC().toLocaleString('default', { month: 'long' }),
-      target_year: Date.UTC().getFullYear(),
+      target_month: now.toLocaleString('default', { month: 'long', timeZone: 'UTC' }),
+      target_year: now.getUTCFullYear().toString(),
       workflow: {
         state: STATE.IDLE,
         taskStates: {

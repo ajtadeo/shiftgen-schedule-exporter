@@ -1,4 +1,4 @@
-<!-- 
+<!--
 @file popup.html
 @brief HTML structure for extension popup.
 -->
@@ -13,6 +13,8 @@
 
 <body>
   <div id="content">
+
+    <div id="messages"></div>
 
     <table id="settings-table">
       <colgroup>
@@ -48,7 +50,7 @@
             </td>
           </form>
         </tr>
-        
+
         <tr>
           <form id="target-year-form">
             <th>
@@ -101,24 +103,38 @@
   </div>
 
   <footer>
-      <div class="button-container">
-        <button id="scrape-button">Scrape ShiftGen Schedule</button>
-        <button id="google-calendar-export-button" disabled>Export to Google Calendar</button>
+    <div class="button-container">
+      <button id="scrape-button">Scrape ShiftGen Schedule</button>
+      <button id="google-calendar-export-button" disabled>Export to Google Calendar</button>
+    </div>
+
+    <p>For Axs &hearts;</p>
+  </footer>
+
+  <template id="shift-template">
+    <tr>
+      <td class="shift-start"></td>
+      <td class="shift-end"></td>
+      <td class="shift-location"></td>
+      <td class="shift-provider-name"></td>
+      <td class="shift-provider-type"></td>
+      <td class="shift-overnight"></td>
+    </tr>
+  </template>
+
+  <template id="error-message-template">
+    <div class="message error-message">
+        <span class="message-close-btn">&times;</span>
+        <div class="error-message-text"></div>
       </div>
+  </template>
 
-      <p>For Axs &hearts;</p>
-    </footer>
-
-    <template id="shift-template">
-      <tr>
-        <td class="shift-start"></td>
-        <td class="shift-end"></td>
-        <td class="shift-location"></td>
-        <td class="shift-provider-name"></td>
-        <td class="shift-provider-type"></td>
-        <td class="shift-overnight"></td>
-      </tr>
-    </template>
+  <template id="info-message-template">
+    <div class="message info-message">
+        <span class="message-close-btn">&times;</span>
+        <div class="info-message-text"></div>
+      </div>
+  </template>
 
   <script src="./popup.js" type="module"></script>
 </body>

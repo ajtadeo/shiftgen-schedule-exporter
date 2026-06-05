@@ -3,7 +3,7 @@
  * @brief Class for scheduling tasks for multi-tab workflow
  */
 
-import { TASKS, STATE } from "./common.js"
+import { TASKS, STATE, infoBadge, errorBadge } from "./common.js"
 
 /**
  * @class TaskManager
@@ -20,8 +20,21 @@ export class TaskManager {
     // Initialize task states
     this.state = workflow.state;
     this.taskStates = workflow.taskStates;
-    this.pendingSchedules = workflow.pendingSchedules;    
+    this.pendingSchedules = workflow.pendingSchedules;
     this.saveTimer;
+
+    // Initialize listener for logged out state
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+      const isOurTab = Object.values(this.taskStates).some(t => t.tabId === tabId);
+      if (!isOurTab) return;
+
+      if (changeInfo.url && changeInfo.url === "https://www.shiftgen.com/") {
+        this.state = STATE.IDLE;
+        await this.saveWorkflow();
+        errorBadge("Not logged into ShiftGen. Please log in and try again.");
+        chrome.tabs.remove(tabId);
+      }
+    });
   }
 
   /**
@@ -32,7 +45,7 @@ export class TaskManager {
    */
   async handleMessage(message, sender, sendResponse) {
     const { type, taskId, data } = message;
-    
+
     switch (type) {
       case 'START':
         if (this.state === STATE.IDLE) {
@@ -170,9 +183,9 @@ export class TaskManager {
     };
 
     await this.saveWorkflow();
-    
+
     console.log(`Task ${taskId} completed in tab ${tabId}`);
-    
+
     // Check if all pending schedules have been scraped
     if (this.pendingSchedules.length !== 0) {
       this.state = STATE.NAVIGATING;
@@ -190,14 +203,14 @@ export class TaskManager {
     // Check if we can create tabs for dependent tasks
     await this.saveWorkflow();
 
-    if (this.taskStates[TASKS.USER.id].status === 'all completed' && 
+    if (this.taskStates[TASKS.USER.id].status === 'all completed' &&
         this.taskStates[TASKS.DOCTOR.id].status === 'pending')
     {
       this.state = STATE.CREATE_TAB_PROVIDER;
       await this.saveWorkflow();
       await this.createTab(TASKS.DOCTOR.id, TASKS.DOCTOR.url);
       return;
-    } else if (this.taskStates[TASKS.USER.id].status === 'all completed' && 
+    } else if (this.taskStates[TASKS.USER.id].status === 'all completed' &&
                this.taskStates[TASKS.PA.id].status === 'pending')
     {
       this.state = STATE.CREATE_TAB_PROVIDER;
@@ -211,6 +224,8 @@ export class TaskManager {
         this.taskStates[TASKS.DOCTOR.id].status === 'all completed'
     ) {
       console.log("Completed task workflow");
+
+      await this.closeTabs();
       this.state = STATE.IDLE;
       this.taskStates = {
         0: { status: 'idle', tabId: null, result: null },
@@ -219,15 +234,7 @@ export class TaskManager {
       };
 
       await this.saveWorkflow();
-
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '../public/icons/icon_32.png',
-        title: 'ShiftGen Schedule Exporter',
-        message: "Completed scraping shifts",
-        priority: 0
-      }); 
-
+      infoBadge("Completed scraping shifts", "🐻");
     } else {
       this.state = STATE.IDLE;
       await this.saveWorkflow();
@@ -252,14 +259,8 @@ export class TaskManager {
 
     console.error(`Task ${taskId} failed:`, error);
     console.log(this.taskStates);
-
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: '../public/icons/icon_32.png',
-      title: 'ShiftGen Schedule Exporter',
-      message: `Task ${taskId} failed: ${error}`,
-      priority: 0
-    });    
+    await this.closeTabs();
+    errorBadge(`Task ${taskId} failed: ${error}`);
   }
 
   /**
@@ -297,7 +298,7 @@ export class TaskManager {
    * @brief Triggers a task
    * @param {number} taskId Task ID
    */
-  async triggerTask(taskId, tabId) {    
+  async triggerTask(taskId, tabId) {
     // Send message to trigger task
     chrome.tabs.sendMessage(tabId, {
       type: 'TRIGGER_TASK',
@@ -418,5 +419,22 @@ export class TaskManager {
     // https://www.shiftgen.com/member/multi_site_schedule?month_id=10&year_id=2025
     const url = TASKS.USER.url + `?month_id=${month}&year_id=${targetYear}`
     return url;
+  }
+
+  /**
+   * @brief Closes all tabs opened during the workflow
+   */
+  async closeTabs() {
+    const tabIds = Object.values(this.taskStates)
+      .map(t => t.tabId)
+      .filter(id => id !== null);
+
+    for (const tabId of tabIds) {
+      try {
+        await chrome.tabs.remove(tabId);
+      } catch (e) {
+        // Tab may already be closed, ignore
+      }
+    }
   }
 }

@@ -153,3 +153,30 @@ footer button:hover:not([disabled]) {
   font-style: italic;
   color: var(--grey-text-color);
 }
+
+#messages {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1em;
+}
+
+.message {
+  display: flex;
+  padding: 0.5em 1em;
+  border-radius: 5px;
+  gap: 1em;
+}
+
+.error-message {
+  background-color: rgb(234, 157, 157);
+}
+
+.info-message {
+  background-color: rgb(157, 202, 160);
+}
+
+.message-close-btn {
+  cursor: pointer;
+  user-select: none;
+}

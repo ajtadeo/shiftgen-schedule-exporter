@@ -25,17 +25,15 @@ async function initTaskManager() {
   messageQueue = [];
 }
 
-initTaskManager();
-
 /**
  * @brief Listener that initializes local storage variables on extension install
  * and update.
  */
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason == "install" || details.reason == "update") {
     // set local storage variables
     let now = new Date;
-    chrome.storage.local.set({
+    await chrome.storage.local.set({
       shifts: {},
       calendar_id: "",
       target_month: now.toLocaleString('default', { month: 'long', timeZone: 'UTC' }),
@@ -49,7 +47,9 @@ chrome.runtime.onInstalled.addListener((details) => {
         },
         pendingSchedules: []
       }
-    })
+    });
+
+    initTaskManager();
   }
 });
 

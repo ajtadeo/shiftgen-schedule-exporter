@@ -18,10 +18,13 @@ export class TaskManager {
     console.log("Created TaskManager");
 
     // Initialize task states
-    this.state = workflow.state;
-    this.taskStates = workflow.taskStates;
-    this.pendingSchedules = workflow.pendingSchedules;
-    this.saveTimer;
+    this.state = workflow.state ?? STATE.IDLE;
+    this.taskStates = workflow.taskStates ?? {
+      0: { status: 'idle', tabId: null, result: null },
+      1: { status: 'idle', tabId: null, result: null },
+      2: { status: 'idle', tabId: null, result: null }
+    };
+    this.pendingSchedules = workflow.pendingSchedules ?? [];
 
     // Initialize listener for logged out state
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {

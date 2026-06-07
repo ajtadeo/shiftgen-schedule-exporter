@@ -18,16 +18,24 @@ To use this extension, first open the extension's popup and configure the settin
   <img src="public/images/configure_settings.png" alt="Configure settings" width="600" >
 </div>
 
-After the settings have been configured, login to [https://shiftgen.com](https://shiftgen.com) and click "Scrape ShiftGen Schedule" to gather all shift data and provider information. This process will open new tabs in your browser as the extension navigates to different pages within ShiftGen. When you get a notification saying "Completed scraping shifts" the processing is complete and you may close any open ShiftGen tabs. 
+After the settings have been configured, login to [https://shiftgen.com](https://shiftgen.com) and click "Scrape ShiftGen Schedule" to gather all shift data and provider information. This process will open new tabs in your browser as the extension navigates to different pages within ShiftGen. When processing is complete, a badge will appear on the extension icon and a "Completed scraping shifts" message is displayed.
 
 <div style="text-align:center">
-  <img src="public/images/completed_notification.png" alt="Completed notification" width="600" >
+  <img src="public/images/scraping_completed_badge.png" alt="Completed badge" width="200" >
 </div>
-
-Open the extension popup to examine the processed shift data. To export the data to Google Calendar, simply click the "Export to Google Calendar" button.
 
 <div style="text-align:center">
   <img src="public/images/examine_shifts.png" alt="Examine shifts" width="600" >
+</div>
+
+Open the extension popup to examine the processed shift data. To export the data to Google Calendar, simply click the "Export to Google Calendar" button. When exporting is complete, a badge will appear on the extension icon and a "Successfully exported shifts to Google Calendar!" message is displayed.
+
+<div style="text-align:center">
+  <img src="public/images/exporting_completed_badge.png" alt="Examine shifts" width="200" >
+</div>
+
+<div style="text-align:center">
+  <img src="public/images/export_shifts.png" alt="Export shifts" width="600" >
 </div>
 
 ## Workflow

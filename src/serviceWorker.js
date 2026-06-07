@@ -48,8 +48,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         pendingSchedules: []
       }
     });
-
-    initTaskManager();
   }
 });
 
@@ -65,3 +63,5 @@ chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
   }
   return true; // async response
 });
+
+initTaskManager();

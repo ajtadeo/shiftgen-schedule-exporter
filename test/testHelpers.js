@@ -1,7 +1,7 @@
 /**
- * @file scraperTestHelpers.js
+ * @file testHelpers.js
  * @brief Shared helpers for DoctorScraper, PaScraper, and UserScraper tests
- * 
+ *
  * HTML fixture summary (from real calendar pages):
  *   doctor_calendar_1.html  - 264 cells, 128 parseable (CHOC + SJH + named locations)
  *   doctor_calendar_2.html  - 264 cells, 128 parseable (identical structure)
@@ -34,4 +34,27 @@ export function makeStoredShift(
   providerType = TASKS.USER.id
 ) {
   return { startTime, endTime, location, overnight: false, providerType, providerName };
+}
+
+export function makeShift(overrides = {}) {
+  return {
+    startTime: new Date('2026-03-01T08:00:00-08:00').toISOString(),
+    endTime:   new Date('2026-03-01T16:00:00-08:00').toISOString(),
+    location:  'CHOC Main',
+    providerName: 'Dr. Smith',
+    providerType: 1, // DOCTOR
+    overnight: false,
+    ...overrides
+  };
+}
+
+export function defaultStorage(overrides = {}) {
+  return {
+    shifts: {},
+    calendar_id: '',
+    target_month: '',
+    target_year: '',
+    messages: [],
+    ...overrides
+  };
 }

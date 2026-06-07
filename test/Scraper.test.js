@@ -4,7 +4,7 @@
  */
 import { Scraper, Shift } from "../src/shiftgen/Scraper.js";
 import { TASKS } from "../src/shiftgen/common.js";
-import { loadHtml } from "./scraperTestHelpers.js";
+import { loadHtml } from "./testHelpers.js";
 
 /**
  * @brief Builds a minimal shift cell element with the given attributes.

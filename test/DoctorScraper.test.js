@@ -13,7 +13,7 @@
 import { DoctorScraper } from "../src/shiftgen/DoctorScraper.js";
 import { Shift } from "../src/shiftgen/Scraper.js";
 import { TASKS } from "../src/shiftgen/common.js";
-import { loadHtml, makeStoredShift } from "./scraperTestHelpers.js";
+import { loadHtml, makeStoredShift } from "./testHelpers.js";
 
 beforeEach(() => {
   chrome.storage.local.get.mockReset();

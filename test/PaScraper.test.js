@@ -18,7 +18,7 @@
 import { PaScraper } from "../src/shiftgen/PaScraper.js";
 import { Shift } from "../src/shiftgen/Scraper.js";
 import { TASKS } from "../src/shiftgen/common.js";
-import { loadHtml, makeStoredShift } from "./scraperTestHelpers.js";
+import { loadHtml, makeStoredShift } from "./testHelpers.js";
 
 beforeEach(() => {
   chrome.storage.local.get.mockReset();
@@ -64,9 +64,9 @@ describe("PaScraper with pa_calendar.html", () => {
     chrome.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "CHOC") }
     });
- 
+
     await new PaScraper().scrape();
- 
+
     const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("GO");
     expect(stored[key].providerType).toBe(TASKS.PA.id);

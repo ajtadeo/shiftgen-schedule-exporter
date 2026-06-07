@@ -5,7 +5,7 @@
 
 import { jest } from '@jest/globals';
 import { TaskManager } from '../src/shiftgen/TaskManager.js';
-import { TASKS, STATE } from '../src/shiftgen/common.js';
+import { TASKS, STATE, MESSAGE_TYPE } from '../src/shiftgen/common.js';
 
 /** @brief Returns a fresh IDLE workflow object */
 function idleWorkflow() {
@@ -31,16 +31,26 @@ beforeEach(() => {
   chrome.tabs.sendMessage.mockReset();
   chrome.storage.local.get.mockReset();
   chrome.storage.local.set.mockReset();
-  chrome.notifications.create.mockReset();
+  chrome.action.setBadgeText.mockReset();
+  chrome.action.setBadgeBackgroundColor.mockReset();
 
-  chrome.storage.local.get.mockResolvedValue({
-    workflow: idleWorkflow(),
-    target_month: 'March',
-    target_year: 2026
-  });
   chrome.storage.local.set.mockResolvedValue(undefined);
   chrome.tabs.sendMessage.mockResolvedValue(undefined);
   chrome.tabs.update.mockResolvedValue(undefined);
+
+  chrome.storage.local.get.mockImplementation((keys, callback) => {
+    const result = {
+      workflow: idleWorkflow(),
+      target_month: 'March',
+      target_year: 2026,
+      messages: []
+    };
+    if (callback) {
+      callback(result);
+      return undefined;
+    }
+    return Promise.resolve(result);
+  })
 });
 
 afterEach(() => {
@@ -177,9 +187,10 @@ describe('handleTaskFailed', () => {
   test('fires a notification', async () => {
     const m = makeManager();
     await m.handleTaskFailed(0, 'oops');
-    expect(chrome.notifications.create).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'basic' })
-    );
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
+    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+      messages: [{ message: 'Task 0 failed: oops', type: MESSAGE_TYPE.ERROR }]
+    });
   });
 });
 
@@ -267,9 +278,10 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(TASKS.PA.id, 30, {});
 
     expect(m.state).toBe(STATE.IDLE);
-    expect(chrome.notifications.create).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('Completed') })
-    );
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "🐻" });
+    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+      messages: [{ message: 'Completed scraping shifts', type: MESSAGE_TYPE.INFO }]
+    });
   });
 
   test('fails with invalid completion state when no branch matches', async () => {
@@ -286,7 +298,10 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(TASKS.PA.id, 30, {});
 
     expect(m.taskStates[TASKS.PA.id].status).toBe('failed');
-    expect(chrome.notifications.create).toHaveBeenCalled();
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
+    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+      messages: [{ message: 'Task 2 failed: Invalid completion state', type: MESSAGE_TYPE.ERROR }]
+    });
   });
 });
 
@@ -364,7 +379,10 @@ describe('triggerChangeSite', () => {
 
     expect(m.state).toBe(STATE.IDLE);
     expect(m.taskStates[TASKS.PA.id].status).toBe('failed');
-    expect(chrome.notifications.create).toHaveBeenCalled();
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
+    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+      messages: [{ message: 'Task 2 failed: Invalid site change trigger', type: MESSAGE_TYPE.ERROR }]
+    });
   });
 });
 

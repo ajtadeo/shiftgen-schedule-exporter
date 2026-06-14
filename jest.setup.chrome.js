@@ -7,12 +7,14 @@ import { jest } from '@jest/globals';
 import { chrome } from 'jest-chrome';
 Object.assign(global, { chrome });
 
+global.browser = chrome;
+
 // Mock chrome
-chrome.action = {
+browser.action = {
   setBadgeText: jest.fn(),
   setBadgeBackgroundColor: jest.fn()
 };
-chrome.tabs.remove = jest.fn();
+browser.tabs.remove = jest.fn();
 
 // Suppress console output during tests
 jest.spyOn(console, 'log').mockImplementation(() => {});

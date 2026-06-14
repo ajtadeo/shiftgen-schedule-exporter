@@ -21,10 +21,10 @@ import { TASKS } from "../src/shiftgen/common.js";
 import { loadHtml, makeStoredShift } from "./testHelpers.js";
 
 beforeEach(() => {
-  chrome.storage.local.get.mockReset();
-  chrome.storage.local.set.mockReset();
-  chrome.storage.local.get.mockResolvedValue({ shifts: {} });
-  chrome.storage.local.set.mockResolvedValue(undefined);
+  browser.storage.local.get.mockReset();
+  browser.storage.local.set.mockReset();
+  browser.storage.local.get.mockResolvedValue({ shifts: {} });
+  browser.storage.local.set.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -48,50 +48,50 @@ describe("PaScraper with pa_calendar.html", () => {
 
   test("scrape() assigns MARONY to a PA-location user shift (8.5h overlap)", async () => {
     const key = 1760137200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
 
     await new PaScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("MARONY");
     expect(stored[key].providerType).toBe(TASKS.PA.id);
   });
 
     test("scrape() assigns GO to a CHOC 0600-1600 user shift (8h overlap)", async () => {
     const key = 1759755600000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "CHOC") }
     });
 
     await new PaScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("GO");
     expect(stored[key].providerType).toBe(TASKS.PA.id);
   });
 
   test("scrape() throws when shifts storage is empty", async () => {
-    chrome.storage.local.get.mockResolvedValue({ shifts: {} });
+    browser.storage.local.get.mockResolvedValue({ shifts: {} });
     await expect(new PaScraper().scrape()).rejects.toThrow("User shifts have not been set");
   });
 
   test("scrape() skips already-claimed shifts", async () => {
     const key = 1760137200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA", "ALREADY", TASKS.DOCTOR.id) }
     });
 
     await new PaScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("ALREADY");
   });
 
   test("scrape() returns { success: true, timestamp: number }", async () => {
     const key = 1760137200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
 
@@ -133,13 +133,13 @@ describe("PaScraper with pa_calendar.html", () => {
     const scraper = new PaScraper();
     scraper.getAllShifts = () => [];          // getAllShifts correctly returns nothing for SJH
 
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userEnd, "CHOC") }
     });
 
     await scraper.scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[userStart].providerName).toBe("");
   });
 });
@@ -161,14 +161,14 @@ describe("PaScraper overlap selection logic (unit)", () => {
 
     const scraper = new PaScraper();
     scraper.getAllShifts = () => [paShift];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       // User shift at "NORTH" — different from PA's "CHOC", but should still match
       shifts: { [userStart]: makeStoredShift(userStart, userStart + 8 * 3600_000, "NORTH") }
     });
 
     await scraper.scrape();
 
-    expect(chrome.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("TESTPA");
+    expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("TESTPA");
   });
 
   test("picks the PA shift with the greatest overlap", async () => {
@@ -180,13 +180,13 @@ describe("PaScraper overlap selection logic (unit)", () => {
 
     const scraper = new PaScraper();
     scraper.getAllShifts = () => [small, big];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userEnd, "NORTH") }
     });
 
     await scraper.scrape();
 
-    expect(chrome.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("BIGPA");
+    expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("BIGPA");
   });
 
   test("does not assign when no PA shift overlaps", async () => {
@@ -196,13 +196,13 @@ describe("PaScraper overlap selection logic (unit)", () => {
 
     const scraper = new PaScraper();
     scraper.getAllShifts = () => [noOverlap];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userStart + 8 * 3600_000, "NORTH") }
     });
 
     await scraper.scrape();
 
-    expect(chrome.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("");
+    expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("");
   });
 
   test("handles multiple user shifts independently", async () => {
@@ -214,7 +214,7 @@ describe("PaScraper overlap selection logic (unit)", () => {
 
     const scraper = new PaScraper();
     scraper.getAllShifts = () => [pa1, pa2];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: {
         [user1Start]: makeStoredShift(user1Start, user1Start + 8 * 3600_000, "NORTH"),
         [user2Start]: makeStoredShift(user2Start, user2Start + 8 * 3600_000, "SOUTH"),
@@ -223,7 +223,7 @@ describe("PaScraper overlap selection logic (unit)", () => {
 
     await scraper.scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[user1Start].providerName).toBe("PA_DAY");
     expect(stored[user2Start].providerName).toBe("PA_NIGHT");
   });

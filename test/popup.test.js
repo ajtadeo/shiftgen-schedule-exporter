@@ -16,26 +16,26 @@ beforeEach(() => {
   const html = fs.readFileSync(path.resolve('src/popup/popup.html'), "utf8");
   document.documentElement.innerHTML = html;
 
-  chrome.storage.local.get.mockReset();
-  chrome.storage.local.set.mockReset();
-  chrome.action.setBadgeText.mockReset();
-  chrome.action.setBadgeBackgroundColor.mockReset();
-  chrome.runtime.sendMessage.mockReset();
-  chrome.tabs.query.mockReset();
-  chrome.storage.onChanged.addListener.mockReset?.();
+  browser.storage.local.get.mockReset();
+  browser.storage.local.set.mockReset();
+  browser.action.setBadgeText.mockReset();
+  browser.action.setBadgeBackgroundColor.mockReset();
+  browser.runtime.sendMessage.mockReset();
+  browser.tabs.query.mockReset();
+  browser.storage.onChanged.addListener.mockReset?.();
 
-  chrome.storage.local.get.mockImplementation((keys, callback) => {
+  browser.storage.local.get.mockImplementation((keys, callback) => {
     const result = defaultStorage();
     if (callback) { callback(result); return undefined; }
     return Promise.resolve(result);
   });
-  chrome.storage.local.set.mockResolvedValue(undefined);
-  chrome.runtime.sendMessage.mockResolvedValue(undefined);
-  chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+  browser.storage.local.set.mockResolvedValue(undefined);
+  browser.runtime.sendMessage.mockResolvedValue(undefined);
+  browser.runtime.sendMessage.mockImplementation((msg, callback) => {
     if (msg.type === 'PING' && callback) callback({ type: 'PONG' });
     return Promise.resolve();
   });
-  chrome.tabs.query.mockImplementation((query, callback) => callback([]));
+  browser.tabs.query.mockImplementation((query, callback) => callback([]));
 });
 
 afterEach(() => {
@@ -60,7 +60,7 @@ async function unloadPopup() {
 
 describe('displayMessages on load', () => {
   test('renders stored error messages and clears storage', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({
         messages: [{ type: MESSAGE_TYPE.ERROR, message: 'Something broke' }]
       });
@@ -72,11 +72,11 @@ describe('displayMessages on load', () => {
 
     expect(document.querySelector('.error-message-text').textContent)
       .toBe('Something broke');
-    expect(chrome.storage.local.set).toHaveBeenCalledWith({ messages: [] });
+    expect(browser.storage.local.set).toHaveBeenCalledWith({ messages: [] });
   });
 
   test('renders stored info messages and clears storage', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({
         messages: [{ type: MESSAGE_TYPE.INFO, message: 'All done!' }]
       });
@@ -88,7 +88,7 @@ describe('displayMessages on load', () => {
 
     expect(document.querySelector('.info-message-text').textContent)
       .toBe('All done!');
-    expect(chrome.storage.local.set).toHaveBeenCalledWith({ messages: [] });
+    expect(browser.storage.local.set).toHaveBeenCalledWith({ messages: [] });
   });
 
   test('does nothing when messages array is empty', async () => {
@@ -98,7 +98,7 @@ describe('displayMessages on load', () => {
   });
 
   test('renders multiple messages', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({
         messages: [
           { type: MESSAGE_TYPE.ERROR, message: 'Error one' },
@@ -121,7 +121,7 @@ describe('displayMessages on load', () => {
 describe('clearBadge on load', () => {
   test('clears the badge when popup opens', async () => {
     await loadPopup();
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: '' });
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: '' });
   });
 });
 
@@ -130,7 +130,7 @@ describe('clearBadge on load', () => {
 describe('shifts table', () => {
   test('populates rows for each shift in storage', async () => {
     const shift = makeShift();
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { 'shift-1': shift } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -145,7 +145,7 @@ describe('shifts table', () => {
   });
 
   test('shows "Doctor" for DOCTOR providerType', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 1 }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -156,7 +156,7 @@ describe('shifts table', () => {
   });
 
   test('shows "PA" for PA providerType', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 2 }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -167,7 +167,7 @@ describe('shifts table', () => {
   });
 
   test('shows "Unknown" for USER providerType', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 0 }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -178,7 +178,7 @@ describe('shifts table', () => {
   });
 
   test('shows "Invalid Type" for unknown providerType', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 99 }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -189,7 +189,7 @@ describe('shifts table', () => {
   });
 
   test('hides no-shifts message when shifts exist', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift() } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -213,11 +213,11 @@ describe('clear shifts button', () => {
     await loadPopup();
     document.querySelector('#clear-shifts').click();
     await new Promise(r => setTimeout(r, 0));
-    expect(chrome.storage.local.set).toHaveBeenCalledWith({ shifts: {} });
+    expect(browser.storage.local.set).toHaveBeenCalledWith({ shifts: {} });
   });
 
   test('shows no-shifts message after clearing', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift() } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -231,7 +231,7 @@ describe('clear shifts button', () => {
   });
 
   test('removes shift rows from table', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ shifts: { s1: makeShift() } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -251,7 +251,7 @@ describe('clear shifts button', () => {
 
 describe('calendar ID form', () => {
   test('pre-fills input when calendar_id is already set', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ calendar_id: 'my-cal-123' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -267,14 +267,14 @@ describe('calendar ID form', () => {
     document.querySelector('#calendar-id-form').dispatchEvent(new Event('submit'));
     await new Promise(r => setTimeout(r, 0));
 
-    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+    expect(browser.storage.local.set).toHaveBeenCalledWith(
       expect.objectContaining({ calendar_id: 'new-cal-456' }),
       expect.any(Function)
     );
   });
 
   test('disables save button after successful save', async () => {
-    chrome.storage.local.set.mockImplementation((data, callback) => {
+    browser.storage.local.set.mockImplementation((data, callback) => {
       if (callback) callback();
       return Promise.resolve();
     });
@@ -288,7 +288,7 @@ describe('calendar ID form', () => {
   });
 
   test('shows saved message after successful save', async () => {
-    chrome.storage.local.set.mockImplementation((data, callback) => {
+    browser.storage.local.set.mockImplementation((data, callback) => {
       if (callback) callback();
       return Promise.resolve();
     });
@@ -302,7 +302,7 @@ describe('calendar ID form', () => {
   });
 
   test('enables export button after saving calendar ID', async () => {
-    chrome.storage.local.set.mockImplementation((data, callback) => {
+    browser.storage.local.set.mockImplementation((data, callback) => {
       if (callback) callback();
       return Promise.resolve();
     });
@@ -320,7 +320,7 @@ describe('calendar ID form', () => {
 
 describe('target month form', () => {
   test('pre-selects month when target_month is already set', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ target_month: 'March' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -336,14 +336,14 @@ describe('target month form', () => {
     document.querySelector('#target-month-form').dispatchEvent(new Event('submit'));
     await new Promise(r => setTimeout(r, 0));
 
-    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+    expect(browser.storage.local.set).toHaveBeenCalledWith(
       expect.objectContaining({ target_month: 'June' }),
       expect.any(Function)
     );
   });
 
   test('disables save button and shows saved message after save', async () => {
-    chrome.storage.local.set.mockImplementation((data, callback) => {
+    browser.storage.local.set.mockImplementation((data, callback) => {
       if (callback) callback();
       return Promise.resolve();
     });
@@ -372,7 +372,7 @@ describe('target year form', () => {
 
   test('pre-selects year when target_year is already set', async () => {
     const currentYear = String(new Date().getFullYear());
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ target_year: currentYear });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -389,14 +389,14 @@ describe('target year form', () => {
     document.querySelector('#target-year-form').dispatchEvent(new Event('submit'));
     await new Promise(r => setTimeout(r, 0));
 
-    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+    expect(browser.storage.local.set).toHaveBeenCalledWith(
       expect.objectContaining({ target_year: currentYear }),
       expect.any(Function)
     );
   });
 
   test('disables save button and shows saved message after save', async () => {
-    chrome.storage.local.set.mockImplementation((data, callback) => {
+    browser.storage.local.set.mockImplementation((data, callback) => {
       if (callback) callback();
       return Promise.resolve();
     });
@@ -416,7 +416,7 @@ describe('target year form', () => {
 
 describe('scrape button', () => {
   test('sends START message when month and year are set', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ target_month: 'March', target_year: '2026' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -426,8 +426,8 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
   });
 
   test('shows error and does not send START when target_month is empty', async () => {
@@ -435,13 +435,13 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
   });
 
   test('shows error and does not send START when target_year is empty', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ target_month: 'March', target_year: '' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -451,9 +451,9 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
   });
 });
 
@@ -466,12 +466,12 @@ describe('google calendar export button', () => {
   });
 
   test('is enabled when calendar_id is set in storage', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ calendar_id: 'my-cal' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
     });
-    chrome.tabs.query.mockImplementation((query, callback) => callback([]));
+    browser.tabs.query.mockImplementation((query, callback) => callback([]));
 
     await loadPopup();
     expect(document.querySelector('#google-calendar-export-button').disabled).toBe(false);
@@ -491,7 +491,7 @@ describe('google calendar export button', () => {
 
 describe('message close button', () => {
   test('removes error message when close button is clicked', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({
         messages: [{ type: MESSAGE_TYPE.ERROR, message: 'Remove me' }]
       });
@@ -510,7 +510,7 @@ describe('message close button', () => {
   });
 
   test('removes info message when close button is clicked', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({
         messages: [{ type: MESSAGE_TYPE.INFO, message: 'Remove me' }]
       });
@@ -529,23 +529,23 @@ describe('message close button', () => {
   });
 });
 
-// ─── chrome.tabs.query (export button enable on load) ───────────────────────
+// ─── browser.tabs.query (export button enable on load) ───────────────────────
 
-describe('chrome.tabs.query on load', () => {
+describe('browser.tabs.query on load', () => {
   test('enables export button if calendar_id is set in storage', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ calendar_id: 'cal-123' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
     });
-    chrome.tabs.query.mockImplementation((query, callback) => callback([]));
+    browser.tabs.query.mockImplementation((query, callback) => callback([]));
 
     await loadPopup();
     expect(document.querySelector('#google-calendar-export-button').disabled).toBe(false);
   });
 
   test('leaves export button disabled if calendar_id is empty', async () => {
-    chrome.tabs.query.mockImplementation((query, callback) => callback([]));
+    browser.tabs.query.mockImplementation((query, callback) => callback([]));
 
     await loadPopup();
     expect(document.querySelector('#google-calendar-export-button').disabled).toBe(true);
@@ -557,18 +557,18 @@ describe('chrome.tabs.query on load', () => {
 describe('wakeServiceWorker', () => {
   test('resolves immediately when worker responds with PONG', async () => {
     await expect(wakeServiceWorker()).resolves.toBeUndefined();
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
   });
 
   test('waits 200ms and resolves when worker is disconnected', async () => {
     jest.useFakeTimers();
-    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
-      Object.defineProperty(chrome.runtime, 'lastError', {
+    browser.runtime.sendMessage.mockImplementation((msg, callback) => {
+      Object.defineProperty(browser.runtime, 'lastError', {
         get: () => ({ message: 'Could not establish connection' }),
         configurable: true
       });
       callback();
-      Object.defineProperty(chrome.runtime, 'lastError', {
+      Object.defineProperty(browser.runtime, 'lastError', {
         get: () => undefined,
         configurable: true
       });
@@ -581,7 +581,7 @@ describe('wakeServiceWorker', () => {
   });
 
   test('scrape button calls wakeServiceWorker before sending START', async () => {
-    chrome.storage.local.get.mockImplementation((keys, callback) => {
+    browser.storage.local.get.mockImplementation((keys, callback) => {
       const result = defaultStorage({ target_month: 'March', target_year: '2026' });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
@@ -591,7 +591,7 @@ describe('wakeServiceWorker', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 50));
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
   }, 10000); // increase timeout as safety net
 });

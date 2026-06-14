@@ -16,10 +16,10 @@ import { TASKS } from "../src/shiftgen/common.js";
 import { loadHtml, makeStoredShift } from "./testHelpers.js";
 
 beforeEach(() => {
-  chrome.storage.local.get.mockReset();
-  chrome.storage.local.set.mockReset();
-  chrome.storage.local.get.mockResolvedValue({ shifts: {} });
-  chrome.storage.local.set.mockResolvedValue(undefined);
+  browser.storage.local.get.mockReset();
+  browser.storage.local.set.mockReset();
+  browser.storage.local.get.mockResolvedValue({ shifts: {} });
+  browser.storage.local.set.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -43,75 +43,75 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
 
   test("scrape() assigns MEHTA to the FLEX user shift (8h overlap)", async () => {
     const key = 1759766400000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX") }
     });
 
     await new DoctorScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("MEHTA");
     expect(stored[key].providerType).toBe(TASKS.DOCTOR.id);
   });
 
   test("scrape() assigns YUAN to the NORTH 1330-2200 user shift (8.5h overlap)", async () => {
     const key = 1759869000000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "NORTH") }
     });
 
     await new DoctorScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("YUAN");
     expect(stored[key].providerType).toBe(TASKS.DOCTOR.id);
   });
 
   test("scrape() does not assign a doctor to a PA-location shift (no location match)", async () => {
     const key = 1760137200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
 
     await new DoctorScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("");
   });
 
   test("scrape() skips already-claimed shifts (providerName !== '')", async () => {
     const key = 1759777200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX", "ALREADY_SET", TASKS.DOCTOR.id) }
     });
 
     await new DoctorScraper().scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("ALREADY_SET");
   });
 
   test("scrape() throws when shifts storage is empty", async () => {
-    chrome.storage.local.get.mockResolvedValue({ shifts: {} });
+    browser.storage.local.get.mockResolvedValue({ shifts: {} });
     await expect(new DoctorScraper().scrape()).rejects.toThrow("User shifts have not been set");
   });
 
   test("scrape() saves updated shifts back to chrome storage", async () => {
     const key = 1759777200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX") }
     });
 
     await new DoctorScraper().scrape();
 
-    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+    expect(browser.storage.local.set).toHaveBeenCalledWith(
       expect.objectContaining({ shifts: expect.any(Object) })
     );
   });
 
   test("scrape() returns { success: true, timestamp: number }", async () => {
     const key = 1759777200000;
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX") }
     });
 
@@ -157,7 +157,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [sjhOnly];            // force-inject an SJH shift
 
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userEnd, "SJH") }
     });
 
@@ -166,7 +166,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
     // DoctorScraper filters by location match — "SJH" user shift vs "SJH" calendar shift
     // would normally match, but getAllShifts must never return SJH shifts in real usage.
     // Here we verify the location-filter still blocks the assignment when locations differ:
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     // The scraper only matches on identical location, so the injected SJH shift *would*
     // match an SJH user shift — this test confirms the guard lives in getAllShifts, not scrape().
     // A future refactor could move the guard; adjust accordingly.
@@ -192,13 +192,13 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [small, big];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userEnd, "LOC") }
     });
 
     await scraper.scrape();
 
-    expect(chrome.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("BIG");
+    expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("BIG");
   });
 
   test("does not assign when no doctor shift overlaps", async () => {
@@ -208,13 +208,13 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [noOverlap];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userStart + 8 * 3600_000, "LOC") }
     });
 
     await scraper.scrape();
 
-    expect(chrome.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("");
+    expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("");
   });
 
   test("ignores doctor shifts at a different location", async () => {
@@ -224,13 +224,13 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [wrongLoc];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userStart + 8 * 3600_000, "RIGHTLOC") }
     });
 
     await scraper.scrape();
 
-    expect(chrome.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("");
+    expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("");
   });
 
   test("handles multiple user shifts independently", async () => {
@@ -242,7 +242,7 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [doc1, doc2];
-    chrome.storage.local.get.mockResolvedValue({
+    browser.storage.local.get.mockResolvedValue({
       shifts: {
         [user1Start]: makeStoredShift(user1Start, user1Start + 8 * 3600_000, "NORTH"),
         [user2Start]: makeStoredShift(user2Start, user2Start + 8 * 3600_000, "SOUTH"),
@@ -251,7 +251,7 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
 
     await scraper.scrape();
 
-    const stored = chrome.storage.local.set.mock.calls[0][0].shifts;
+    const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[user1Start].providerName).toBe("DOCNORTH");
     expect(stored[user2Start].providerName).toBe("DOCSOUTH");
   });

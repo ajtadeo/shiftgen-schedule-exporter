@@ -22,20 +22,20 @@ function makeManager(workflow = idleWorkflow()) {
 }
 
 beforeEach(() => {
-  chrome.tabs.create.mockReset();
-  chrome.tabs.update.mockReset();
-  chrome.tabs.sendMessage.mockReset();
-  chrome.storage.local.get.mockReset();
-  chrome.storage.local.set.mockReset();
-  chrome.action.setBadgeText.mockReset();
-  chrome.action.setBadgeBackgroundColor.mockReset();
+  browser.tabs.create.mockReset();
+  browser.tabs.update.mockReset();
+  browser.tabs.sendMessage.mockReset();
+  browser.storage.local.get.mockReset();
+  browser.storage.local.set.mockReset();
+  browser.action.setBadgeText.mockReset();
+  browser.action.setBadgeBackgroundColor.mockReset();
 
-  chrome.storage.local.set.mockResolvedValue(undefined);
-  chrome.tabs.sendMessage.mockResolvedValue(undefined);
-  chrome.tabs.update.mockResolvedValue(undefined);
-  chrome.tabs.remove.mockResolvedValue(undefined);
+  browser.storage.local.set.mockResolvedValue(undefined);
+  browser.tabs.sendMessage.mockResolvedValue(undefined);
+  browser.tabs.update.mockResolvedValue(undefined);
+  browser.tabs.remove.mockResolvedValue(undefined);
 
-  chrome.storage.local.get.mockImplementation((keys, callback) => {
+  browser.storage.local.get.mockImplementation((keys, callback) => {
     const result = {
       workflow: idleWorkflow(),
       target_month: 'March',
@@ -87,7 +87,7 @@ describe('saveWorkflow', () => {
     m.pendingSchedules = ['https://example.com/x'];
     await m.saveWorkflow();
 
-    expect(chrome.storage.local.set).toHaveBeenCalledWith({
+    expect(browser.storage.local.set).toHaveBeenCalledWith({
       workflow: expect.objectContaining({
         state: STATE.NAVIGATING,
         pendingSchedules: ['https://example.com/x']
@@ -102,20 +102,20 @@ describe('saveWorkflow', () => {
 
 describe('createTab', () => {
   test('creates a tab at the given URL and updates taskStates', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 77 });
+    browser.tabs.create.mockResolvedValue({ id: 77 });
     const m = makeManager();
     await m.createTab(TASKS.USER.id, TASKS.USER.url);
 
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: TASKS.USER.url });
+    expect(browser.tabs.create).toHaveBeenCalledWith({ url: TASKS.USER.url });
     expect(m.taskStates[TASKS.USER.id].status).toBe('tab_created');
     expect(m.taskStates[TASKS.USER.id].tabId).toBe(77);
   });
 
   test('saves workflow after creating tab', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 77 });
+    browser.tabs.create.mockResolvedValue({ id: 77 });
     const m = makeManager();
     await m.createTab(TASKS.DOCTOR.id, TASKS.DOCTOR.url);
-    expect(chrome.storage.local.set).toHaveBeenCalled();
+    expect(browser.storage.local.set).toHaveBeenCalled();
   });
 });
 
@@ -125,17 +125,17 @@ describe('createTab', () => {
 
 describe('handleStart', () => {
   test('resets all taskStates to pending and creates USER tab', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 123 });
+    browser.tabs.create.mockResolvedValue({ id: 123 });
     const m = makeManager();
     await m.handleStart();
 
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: TASKS.USER.url });
+    expect(browser.tabs.create).toHaveBeenCalledWith({ url: TASKS.USER.url });
     expect(m.taskStates[TASKS.USER.id].status).toBe('tab_created');
     expect(m.taskStates[TASKS.USER.id].tabId).toBe(123);
   });
 
   test('clears pendingSchedules', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 1 });
+    browser.tabs.create.mockResolvedValue({ id: 1 });
     const wf = { ...idleWorkflow(), pendingSchedules: ['https://leftover.com'] };
     const m = makeManager(wf);
     await m.handleStart();
@@ -143,10 +143,10 @@ describe('handleStart', () => {
   });
 
   test('clears shifts in storage', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 1 });
+    browser.tabs.create.mockResolvedValue({ id: 1 });
     const m = makeManager();
     await m.handleStart();
-    expect(chrome.storage.local.set).toHaveBeenCalledWith({ shifts: {} });
+    expect(browser.storage.local.set).toHaveBeenCalledWith({ shifts: {} });
   });
 });
 
@@ -165,7 +165,7 @@ describe('handleTaskRunning', () => {
   test('saves workflow', async () => {
     const m = makeManager();
     await m.handleTaskRunning(0, 55);
-    expect(chrome.storage.local.set).toHaveBeenCalled();
+    expect(browser.storage.local.set).toHaveBeenCalled();
   });
 });
 
@@ -184,8 +184,8 @@ describe('handleTaskFailed', () => {
   test('fires a notification', async () => {
     const m = makeManager();
     await m.handleTaskFailed(0, 'oops');
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
-    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
+    expect(browser.storage.local.set).toHaveBeenLastCalledWith({
       messages: [{ message: 'Task 0 failed: oops', type: MESSAGE_TYPE.ERROR }]
     });
   });
@@ -204,7 +204,7 @@ describe('handlePendingSchedules', () => {
     await m.handlePendingSchedules(0, 200);
 
     expect(m.pendingSchedules).toHaveLength(1);
-    expect(chrome.tabs.update).toHaveBeenCalledWith(200, { url: 'https://example.com/s1' });
+    expect(browser.tabs.update).toHaveBeenCalledWith(200, { url: 'https://example.com/s1' });
     expect(m.taskStates[0].status).toBe('navigating');
   });
 });
@@ -223,11 +223,11 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(0, 10, {});
 
     expect(m.state).toBe(STATE.NAVIGATING);
-    expect(chrome.tabs.update).toHaveBeenCalledWith(10, { url: 'https://example.com/next' });
+    expect(browser.tabs.update).toHaveBeenCalledWith(10, { url: 'https://example.com/next' });
   });
 
   test('creates DOCTOR tab when USER is all completed and DOCTOR is pending', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 88 });
+    browser.tabs.create.mockResolvedValue({ id: 88 });
     const m = makeManager();
     m.state = STATE.RUNNING;
     m.pendingSchedules = [];
@@ -240,12 +240,12 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(TASKS.USER.id, 10, {});
 
     expect(m.state).toBe(STATE.CREATE_TAB_PROVIDER);
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: TASKS.DOCTOR.url });
+    expect(browser.tabs.create).toHaveBeenCalledWith({ url: TASKS.DOCTOR.url });
     expect(m.taskStates[TASKS.DOCTOR.id].status).toBe('tab_created');
   });
 
   test('creates PA tab when USER and DOCTOR are all completed and PA is pending', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 99 });
+    browser.tabs.create.mockResolvedValue({ id: 99 });
     const m = makeManager();
     m.state = STATE.RUNNING;
     m.pendingSchedules = [];
@@ -258,7 +258,7 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(TASKS.DOCTOR.id, 20, {});
 
     expect(m.state).toBe(STATE.CREATE_TAB_PROVIDER);
-    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: TASKS.PA.url });
+    expect(browser.tabs.create).toHaveBeenCalledWith({ url: TASKS.PA.url });
     expect(m.taskStates[TASKS.PA.id].status).toBe('tab_created');
   });
 
@@ -275,8 +275,8 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(TASKS.PA.id, 30, {});
 
     expect(m.state).toBe(STATE.IDLE);
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "🐻" });
-    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "🐻" });
+    expect(browser.storage.local.set).toHaveBeenLastCalledWith({
       messages: [{ message: 'Completed scraping shifts', type: MESSAGE_TYPE.INFO }]
     });
   });
@@ -295,8 +295,8 @@ describe('handleTaskCompleted', () => {
     await m.handleTaskCompleted(TASKS.PA.id, 30, {});
 
     expect(m.taskStates[TASKS.PA.id].status).toBe('failed');
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
-    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
+    expect(browser.storage.local.set).toHaveBeenLastCalledWith({
       messages: [{ message: 'Task 2 failed: Invalid completion state', type: MESSAGE_TYPE.ERROR }]
     });
   });
@@ -312,7 +312,7 @@ describe('triggerTask', () => {
     m.taskStates[1] = { status: 'tab_created', tabId: 101, result: null };
     await m.triggerTask(1, 101);
 
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(101, {
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(101, {
       type: 'TRIGGER_TASK',
       taskId: 1
     });
@@ -334,7 +334,7 @@ describe('triggerChangeSite', () => {
 
     expect(m.state).toBe(STATE.CHANGE_SITE_USER);
     expect(m.taskStates[TASKS.USER.id].status).toBe('changing site');
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(101, expect.objectContaining({
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(101, expect.objectContaining({
       type: 'TRIGGER_CHANGE_SITE',
       siteId: TASKS.USER.siteId
     }));
@@ -350,7 +350,7 @@ describe('triggerChangeSite', () => {
 
     expect(m.state).toBe(STATE.CHANGE_SITE_DOCTOR);
     expect(m.taskStates[TASKS.DOCTOR.id].status).toBe('changing site');
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(200, expect.objectContaining({
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(200, expect.objectContaining({
       siteId: TASKS.DOCTOR.siteId,
       taskToUpdate: TASKS.DOCTOR.id
     }));
@@ -364,7 +364,7 @@ describe('triggerChangeSite', () => {
 
     expect(m.state).toBe(STATE.CHANGE_SITE_PA);
     expect(m.taskStates[TASKS.PA.id].status).toBe('changing site');
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(300, expect.objectContaining({
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(300, expect.objectContaining({
       siteId: TASKS.PA.siteId,
       taskToUpdate: TASKS.PA.id
     }));
@@ -376,8 +376,8 @@ describe('triggerChangeSite', () => {
 
     expect(m.state).toBe(STATE.IDLE);
     expect(m.taskStates[TASKS.PA.id].status).toBe('failed');
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
-    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+    expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
+    expect(browser.storage.local.set).toHaveBeenLastCalledWith({
       messages: [{ message: 'Task 2 failed: Invalid site change trigger', type: MESSAGE_TYPE.ERROR }]
     });
   });
@@ -393,7 +393,7 @@ describe('triggerNavigation', () => {
     m.taskStates[2] = { status: 'tab_created', tabId: 500, result: null };
     await m.triggerNavigation(2, 500, 'https://example.com/page');
 
-    expect(chrome.tabs.update).toHaveBeenCalledWith(500, { url: 'https://example.com/page' });
+    expect(browser.tabs.update).toHaveBeenCalledWith(500, { url: 'https://example.com/page' });
     expect(m.taskStates[2].status).toBe('navigating');
   });
 });
@@ -408,7 +408,7 @@ describe('triggerCollectSchedules', () => {
     m.taskStates[1] = { status: 'tab_created', tabId: 300, result: null };
     await m.triggerCollectSchedules(1, 300);
 
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(300, {
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(300, {
       type: 'TRIGGER_COLLECT_SCHEDULES',
       taskId: 1
     });
@@ -443,7 +443,7 @@ describe('handleMessage', () => {
 
   // --- START ---
   test('START when IDLE transitions to CREATE_TAB_USER and calls handleStart', async () => {
-    chrome.tabs.create.mockResolvedValue({ id: 555 });
+    browser.tabs.create.mockResolvedValue({ id: 555 });
     const m = makeManager();
 
     await m.handleMessage({ type: 'START' }, {}, jest.fn());
@@ -458,7 +458,7 @@ describe('handleMessage', () => {
 
     await m.handleMessage({ type: 'START' }, {}, jest.fn());
 
-    expect(chrome.tabs.create).not.toHaveBeenCalled();
+    expect(browser.tabs.create).not.toHaveBeenCalled();
     expect(m.state).toBe(STATE.RUNNING);
   });
 
@@ -481,7 +481,7 @@ describe('handleMessage', () => {
 
     await m.handleMessage({ type: 'CONTENT_SCRIPT_READY', taskId: TASKS.USER.id }, { tab: { id: 10 } }, jest.fn());
 
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(10, expect.objectContaining({
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(10, expect.objectContaining({
       type: 'TRIGGER_CHANGE_SITE'
     }));
   });
@@ -494,7 +494,7 @@ describe('handleMessage', () => {
     await m.handleMessage({ type: 'CONTENT_SCRIPT_READY', taskId: 0 }, { tab: { id: 10 } }, jest.fn());
 
     expect(m.state).toBe(STATE.NAVIGATING);
-    expect(chrome.tabs.update).toHaveBeenCalled();
+    expect(browser.tabs.update).toHaveBeenCalled();
   });
 
   test('CONTENT_SCRIPT_READY in CHANGE_SITE_PA triggers collectSchedules for PA', async () => {
@@ -505,7 +505,7 @@ describe('handleMessage', () => {
     await m.handleMessage({ type: 'CONTENT_SCRIPT_READY', taskId: TASKS.PA.id }, { tab: { id: 20 } }, jest.fn());
 
     expect(m.state).toBe(STATE.COLLECT_SCHEDULES);
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(20, expect.objectContaining({
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(20, expect.objectContaining({
       type: 'TRIGGER_COLLECT_SCHEDULES',
       taskId: TASKS.PA.id
     }));
@@ -519,7 +519,7 @@ describe('handleMessage', () => {
     await m.handleMessage({ type: 'CONTENT_SCRIPT_READY', taskId: TASKS.DOCTOR.id }, { tab: { id: 30 } }, jest.fn());
 
     expect(m.state).toBe(STATE.COLLECT_SCHEDULES);
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(30, expect.objectContaining({
+    expect(browser.tabs.sendMessage).toHaveBeenCalledWith(30, expect.objectContaining({
       type: 'TRIGGER_COLLECT_SCHEDULES',
       taskId: TASKS.DOCTOR.id
     }));
@@ -548,7 +548,7 @@ describe('handleMessage', () => {
     }, { tab: { id: 50 } }, jest.fn());
 
     expect(m.state).toBe(STATE.NAVIGATING);
-    expect(chrome.tabs.update).toHaveBeenCalled();
+    expect(browser.tabs.update).toHaveBeenCalled();
   });
 
   test('SCHEDULES with empty list fails the task', async () => {
@@ -574,7 +574,7 @@ describe('handleMessage', () => {
       data: { pendingSchedules: ['https://x.com'], targetMonth: 'March', targetYear: 2026 }
     }, { tab: { id: 50 } }, jest.fn());
 
-    expect(chrome.tabs.update).not.toHaveBeenCalled();
+    expect(browser.tabs.update).not.toHaveBeenCalled();
   });
 
   // --- TASK_RUNNING ---
@@ -606,7 +606,7 @@ describe('handleMessage', () => {
     await m.handleMessage({ type: 'TASK_COMPLETED', taskId: 0, data: {} }, { tab: { id: 60 } }, jest.fn());
 
     expect(m.state).toBe(STATE.IDLE);
-    expect(chrome.tabs.create).not.toHaveBeenCalled();
+    expect(browser.tabs.create).not.toHaveBeenCalled();
   });
 
   // --- TASK_FAILED ---

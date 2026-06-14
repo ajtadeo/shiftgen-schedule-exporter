@@ -23,7 +23,7 @@ export function loadHtml(filename) {
 }
 
 /**
- * @brief Build a minimal shift JSON entry as stored in chrome.storage.local["shifts"].
+ * @brief Build a minimal shift JSON entry as stored in browser.storage.local["shifts"].
  * providerName defaults to "" (unclaimed) — the normal state before scraping.
  */
 export function makeStoredShift(

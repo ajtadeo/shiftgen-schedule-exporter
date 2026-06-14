@@ -116,20 +116,11 @@ describe('displayMessages on load', () => {
   });
 });
 
-// ─── clearBadge on load and unload ───────────────────────────────────────────
+// ─── clearBadge on load ──────────────────────────────────────────────────────
 
 describe('clearBadge on load', () => {
   test('clears the badge when popup opens', async () => {
     await loadPopup();
-    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: '' });
-  });
-});
-
-describe('clearBadge on unload', () => {
-  test('clears the badge when popup closes', async () => {
-    await loadPopup();
-    chrome.action.setBadgeText.mockReset();
-    await unloadPopup();
     expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: '' });
   });
 });

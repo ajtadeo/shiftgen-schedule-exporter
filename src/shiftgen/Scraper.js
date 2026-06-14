@@ -14,13 +14,13 @@ const patterns = {
 export class Shift {
   /**
    * @brief Constructor for Shift class
-   * 
+   *
    * @param {number} startTime Shift start time in epoch milliseconds
    * @param {number} endTime Shift end time in epoch milliseconds
    * @param {string} location Shift location
    * @param {boolean} overnight Overnight flag, true if overnight else false
    * @param {string} providerType Provider type
-   * @param {string} providerName Provider name 
+   * @param {string} providerName Provider name
    */
   constructor(startTime, endTime, location, overnight, providerType, providerName) {
     this.startTime = startTime;                // epoch ms (int)
@@ -33,7 +33,7 @@ export class Shift {
 
   /**
    * @brief Gets shift data as a JSON object for storage in local storage.
-   * 
+   *
    * @returns Shift data as a JSON object
    */
   getJSON() {
@@ -80,8 +80,8 @@ export class Scraper {
     this.taskId = task.id;
     this.siteId = task.siteId;
     this.providerType = task.id;
-    
-    chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+
+    browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
         this.executeTask();
       } else if (message.type === 'TRIGGER_CHANGE_SITE' && message.taskId === this.taskId) {
@@ -96,12 +96,12 @@ export class Scraper {
   }
 
   /**
-   * @brief Awaits task dependencies to complete, then executes task 
+   * @brief Awaits task dependencies to complete, then executes task
    */
   async executeTask() {
     try {
       // Signal task start
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'TASK_RUNNING',
         taskId: this.taskId
       });
@@ -109,7 +109,7 @@ export class Scraper {
       await this.scrape();
 
       // Signal task completion
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'TASK_COMPLETED',
         taskId: this.taskId,
       });
@@ -118,7 +118,7 @@ export class Scraper {
 
     } catch (error) {
       console.error(`Task ${this.taskId} failed:`, error);
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
         data: error.message
@@ -140,7 +140,7 @@ export class Scraper {
       button = document.querySelector("#sites-nav-CHOCScribe");
     } else {
       console.error(`Task ${this.taskId} failed:`, error);
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
         data: `Failed to change site for siteId: ${siteId}`
@@ -167,7 +167,7 @@ export class Scraper {
 
     if (publishedSchedules === null) {
       console.error(`Task ${this.taskId} failed:`, error);
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
         data: `Failed to navigate to schedule for taskId: ${this.taskId}`
@@ -175,7 +175,7 @@ export class Scraper {
     }
 
     // Find all schedules with target month and year
-    const localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
+    const localStorage = await browser.storage.local.get(["target_month", "target_year"]);
     const targetMonth = localStorage.target_month;
     const targetYear = localStorage.target_year;
     const targetMonthShort = new Date(`${targetMonth} 1, ${targetYear}`).toLocaleDateString("default", {month: "short"});
@@ -192,7 +192,7 @@ export class Scraper {
       }
     }
 
-    chrome.runtime.sendMessage({
+    browser.runtime.sendMessage({
       type: 'SCHEDULES',
       taskId: this.taskId,
       data: {
@@ -343,10 +343,10 @@ export class Scraper {
 
   /**
    * @brief Calculates the overlap in milliseconds between two shifts.
-   * 
+   *
    * @param {Shift} shift Provider shift
    * @param {Shift} userShift User's shift
-   * 
+   *
    * @returns Length in milliseconds of the overlap. 0 if no overlap exists
    */
   getOverlap(shift, userShift) {
@@ -365,7 +365,7 @@ export class Scraper {
   checkCalendarExistence() {
     if (document.querySelector(".flex-1.p-4.overflow-scroll #calendar") === null) {
       console.error(`Task ${this.taskId} failed:`, "No user shifts available");
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         type: 'TASK_FAILED',
         taskId: this.taskId,
         data: "No user shifts available"

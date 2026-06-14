@@ -44,30 +44,30 @@ export const MESSAGE_TYPE = {
 
 export async function infoBadge(message = "", icon) {
   if (message.length > 0) {
-    chrome.storage.local.get(["messages"], (result) => {
+    browser.storage.local.get(["messages"], (result) => {
       const messages = result.messages || [];
       messages.push({message: message, type: MESSAGE_TYPE.INFO});
-      chrome.storage.local.set({ messages });
+      browser.storage.local.set({ messages });
     });
   }
-  chrome.action.setBadgeText({ text: icon });
-  chrome.action.setBadgeBackgroundColor({ color: "#9DCAA0" });
+  browser.action.setBadgeText({ text: icon });
+  browser.action.setBadgeBackgroundColor({ color: "#9DCAA0" });
 }
 
 export async function errorBadge(message = "") {
   if (message.length > 0) {
-    chrome.storage.local.get(["messages"], (result) => {
+    browser.storage.local.get(["messages"], (result) => {
       const messages = result.messages || [];
       messages.push({message: message, type: MESSAGE_TYPE.ERROR});
-      chrome.storage.local.set({ messages });
+      browser.storage.local.set({ messages });
     });
   }
-  chrome.action.setBadgeText({ text: "ERR" });
-  chrome.action.setBadgeBackgroundColor({ color: "#EF4444" });
+  browser.action.setBadgeText({ text: "ERR" });
+  browser.action.setBadgeBackgroundColor({ color: "#EF4444" });
 }
 
 export async function clearBadge() {
-  chrome.action.setBadgeText({ text: "" });
+  browser.action.setBadgeText({ text: "" });
 }
 
 export function defaultTaskStates() {

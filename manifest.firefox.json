@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "Schedule Exporter for ShiftGen",
+  "description": "Exports schedule with extra information about the provider on staff from ShiftGen to Google Calendar.",
+  "version": "2.2.1",
+  "icons": {
+    "16": "public/icons/icon_16.png",
+    "32": "public/icons/icon_32.png",
+    "48": "public/icons/icon_48.png",
+    "128": "public/icons/icon_128.png"
+  },
+  "background": {
+    "type": "module",
+    "scripts": [
+      "src/browser-polyfill.js",
+      "src/serviceWorker.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "js": ["src/browser-polyfill.js", "src/contentScripts/userContentScript.js"],
+      "matches": ["https://www.shiftgen.com/member/multi_site_schedule*"]
+    },
+    {
+      "js": ["src/browser-polyfill.js", "src/contentScripts/adminContentScript.js"],
+      "matches": ["https://www.shiftgen.com/admin/index", "https://www.shiftgen.com/member/schedule*"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": ["https://www.shiftgen.com/*"],
+      "resources": [
+        "src/browser-polyfill.js",
+        "src/shiftgen/common.js",
+        "src/shiftgen/Scraper.js",
+        "src/shiftgen/UserScraper.js",
+        "src/shiftgen/PaScraper.js",
+        "src/shiftgen/DoctorScraper.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html"
+  },
+  "permissions": [
+    "storage",
+    "identity",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.googleapis.com/"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "shiftgen-schedule-exporter@ajtadeo.com",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}

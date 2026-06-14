@@ -4,12 +4,12 @@
  */
 
 (async () => {
-  const userScraper = await import(chrome.runtime.getURL('src/shiftgen/UserScraper.js'));
-  const common = await import(chrome.runtime.getURL('src/shiftgen/common.js'));
+  const userScraper = await import(browser.runtime.getURL('src/shiftgen/UserScraper.js'));
+  const common = await import(browser.runtime.getURL('src/shiftgen/common.js'));
 
   const scraper = new userScraper.UserScraper();
 
-  chrome.runtime.sendMessage({
+  browser.runtime.sendMessage({
     type: 'CONTENT_SCRIPT_READY',
     taskId: common.TASKS.USER.id
   });

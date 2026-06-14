@@ -23,7 +23,7 @@ export class TaskManager {
     this.pendingSchedules = workflow.pendingSchedules;
 
     // Initialize listener for logged out state
-    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       const isOurTab = Object.values(this.taskStates).some(t => t.tabId === tabId);
       if (!isOurTab) return;
 
@@ -31,7 +31,7 @@ export class TaskManager {
         this.state = STATE.IDLE;
         await this.saveWorkflow();
         await errorBadge("Oops, logged out of ShiftGen. Please log in and try again.");
-        chrome.tabs.remove(tabId);
+        browser.tabs.remove(tabId);
       }
     });
   }
@@ -126,7 +126,7 @@ export class TaskManager {
    * with a 50ms debounce delay.
    * */
   async saveWorkflow() {
-    await chrome.storage.local.set({
+    await browser.storage.local.set({
       workflow: {
         state: this.state,
         taskStates: this.taskStates,
@@ -146,7 +146,7 @@ export class TaskManager {
       2: { status: 'pending', tabId: null, result: null }
     };
     this.pendingSchedules = [];
-    await chrome.storage.local.set({ shifts: {} });
+    await browser.storage.local.set({ shifts: {} });
 
     await this.saveWorkflow();
     await this.createTab(TASKS.USER.id, TASKS.USER.url);
@@ -277,7 +277,7 @@ export class TaskManager {
    * @param {string} url URL to open
    */
   async createTab(taskId, url) {
-    const targetTabId = (await chrome.tabs.create({ url: url })).id;
+    const targetTabId = (await browser.tabs.create({ url: url })).id;
     this.taskStates[taskId] = {
       ...this.taskStates[taskId],
       status: 'tab_created',
@@ -295,7 +295,7 @@ export class TaskManager {
    */
   async triggerTask(taskId, tabId) {
     // Send message to trigger task
-    chrome.tabs.sendMessage(tabId, {
+    browser.tabs.sendMessage(tabId, {
       type: 'TRIGGER_TASK',
       taskId: taskId,
     });
@@ -344,7 +344,7 @@ export class TaskManager {
       site = "USER"
     }
 
-    chrome.tabs.sendMessage(tabId, {
+    browser.tabs.sendMessage(tabId, {
       type: 'TRIGGER_CHANGE_SITE',
       taskId: taskId,
       taskToUpdate: taskToUpdate,
@@ -368,7 +368,7 @@ export class TaskManager {
    * @param {string} url URL to set the tab with Tab ID to
    */
   async triggerNavigation(taskId, tabId, url) {
-    chrome.tabs.update(tabId, { url: url });
+    browser.tabs.update(tabId, { url: url });
 
     this.taskStates[taskId] = {
       ...this.taskStates[taskId],
@@ -386,7 +386,7 @@ export class TaskManager {
    * @param {number} tabId Tab ID
    */
   async triggerCollectSchedules(taskId, tabId) {
-    chrome.tabs.sendMessage(tabId, {
+    browser.tabs.sendMessage(tabId, {
       type: 'TRIGGER_COLLECT_SCHEDULES',
       taskId: taskId
     });
@@ -406,7 +406,7 @@ export class TaskManager {
    * @returns Target month and year URL
    */
   async getTargetUrl() {
-    const localStorage = await chrome.storage.local.get(["target_month", "target_year"])
+    const localStorage = await browser.storage.local.get(["target_month", "target_year"])
     const targetMonth = localStorage.target_month;
     const targetYear = localStorage.target_year;
     const month = new Date(`${targetMonth} 1, ${targetYear} 00:00:00 GMT-0000`).getUTCMonth() + 1;  // shift-key month is 1-indexed
@@ -426,7 +426,7 @@ export class TaskManager {
 
     for (const tabId of tabIds) {
       try {
-        await chrome.tabs.remove(tabId);
+        await browser.tabs.remove(tabId);
       } catch (e) {
         // Tab may already be closed, ignore
       }

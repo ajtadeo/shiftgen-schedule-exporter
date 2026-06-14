@@ -4,13 +4,14 @@
  */
 
 import { TASKS, infoBadge, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
+import { getAccessToken } from "../googleAuth.js";
 
 // Window events
 window.addEventListener("DOMContentLoaded", () => loadPopup());
 
-// Chrome events
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => handleToggleButtons(tabs));
-chrome.storage.onChanged.addListener((changes, area) => handleDisplayMessages(changes, area));
+// Browser events
+browser.tabs.query({ active: true, currentWindow: true }, (tabs) => handleToggleButtons(tabs));
+browser.storage.onChanged.addListener((changes, area) => handleDisplayMessages(changes, area));
 
 /**
  * @brief Main initialization function on popup load.
@@ -22,7 +23,7 @@ export async function loadPopup() {
 
   // set up google calendar export button
   document.querySelector("#google-calendar-export-button").addEventListener('click', async () => {
-    let localStorage = await chrome.storage.local.get(["shifts", "calendar_id"]);
+    let localStorage = await browser.storage.local.get(["shifts", "calendar_id"]);
 
     if (localStorage.calendar_id === "") {
       await errorBadge();
@@ -31,7 +32,16 @@ export async function loadPopup() {
     }
 
     document.querySelector("#google-calendar-export-button").disabled = true;
-    chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+    let token;
+    try {
+      token = await getAccessToken();
+    } catch (error) {
+      await errorBadge();
+      addErrorMessage(error.message);
+      return;
+    }
+
+    // browser.identity.getAuthToken({ interactive: true }, async (token) => {
       let shifts = localStorage.shifts;
       let calendarId = localStorage.calendar_id;
       let postedAllEvents = true;
@@ -58,12 +68,12 @@ export async function loadPopup() {
       // for (const [key, value] of Object.entries(TEST_SHIFTS)) {
       //   await exportToGoogleCalendar(token, value)
       // }
-    });
+    // });
   });
 
   // setup automatic website scraper for all shifts
   document.querySelector("#scrape-button").addEventListener("click", async () => {
-    let localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
+    let localStorage = await browser.storage.local.get(["target_month", "target_year"]);
 
     if (localStorage.target_month === "") {
       await errorBadge();
@@ -79,11 +89,11 @@ export async function loadPopup() {
 
     // Start task workflow
     await wakeServiceWorker();
-    chrome.runtime.sendMessage({ type: 'START' });
+    browser.runtime.sendMessage({ type: 'START' });
   })
 
   // populate shifts table
-  let localStorage = await chrome.storage.local.get(["shifts", "calendar_id", "target_month", "target_year"]);
+  let localStorage = await browser.storage.local.get(["shifts", "calendar_id", "target_month", "target_year"]);
   let shifts = localStorage.shifts;
   const tbody = document.querySelector("#shift-tbody");
   const template = document.querySelector("#shift-template");
@@ -117,10 +127,10 @@ export async function loadPopup() {
     event.preventDefault();
     const calendarId = document.getElementById("calendar-id-input").value;
 
-    await chrome.storage.local.set({ "calendar_id": calendarId }, function() {
-      if (chrome.runtime.lastError) {
-        document.querySelector("#calendar-id-message").textContent = "Error: " + chrome.runtime.lastError;
-        console.error("Error saving to storage:", chrome.runtime.lastError);
+    await browser.storage.local.set({ "calendar_id": calendarId }, function() {
+      if (browser.runtime.lastError) {
+        document.querySelector("#calendar-id-message").textContent = "Error: " + browser.runtime.lastError;
+        console.error("Error saving to storage:", browser.runtime.lastError);
       } else {
         document.querySelector("#calendar-id-button").disabled = true;
         document.querySelector("#calendar-id-message").style.visibility = "visible"
@@ -139,10 +149,10 @@ export async function loadPopup() {
     event.preventDefault();
     const targetMonth = document.getElementById("target-month-select").value;
 
-    await chrome.storage.local.set({ "target_month": targetMonth }, function() {
-      if (chrome.runtime.lastError) {
-        document.querySelector("#target-month-message").textContent = "Error: " + chrome.runtime.lastError;
-        console.error("Error saving to storage:", chrome.runtime.lastError);
+    await browser.storage.local.set({ "target_month": targetMonth }, function() {
+      if (browser.runtime.lastError) {
+        document.querySelector("#target-month-message").textContent = "Error: " + browser.runtime.lastError;
+        console.error("Error saving to storage:", browser.runtime.lastError);
       } else {
         document.querySelector("#target-month-button").disabled = true;
         document.querySelector("#target-month-message").style.visibility = "visible"
@@ -172,10 +182,10 @@ export async function loadPopup() {
     event.preventDefault();
     const targetYear = document.getElementById("target-year-select").value;
 
-    await chrome.storage.local.set({ "target_year": targetYear }, function() {
-      if (chrome.runtime.lastError) {
-        document.querySelector("#target-year-message").textContent = "Error: " + chrome.runtime.lastError;
-        console.error("Error saving to storage:", chrome.runtime.lastError);
+    await browser.storage.local.set({ "target_year": targetYear }, function() {
+      if (browser.runtime.lastError) {
+        document.querySelector("#target-year-message").textContent = "Error: " + browser.runtime.lastError;
+        console.error("Error saving to storage:", browser.runtime.lastError);
       } else {
         document.querySelector("#target-year-button").disabled = true;
         document.querySelector("#target-year-message").style.visibility = "visible"
@@ -186,7 +196,7 @@ export async function loadPopup() {
 
   // setup clear shifts button
   document.querySelector("#clear-shifts").addEventListener("click", async () => {
-    await chrome.storage.local.set({
+    await browser.storage.local.set({
       shifts: {}
     });
 
@@ -222,7 +232,7 @@ export async function loadPopup() {
  */
 async function handleToggleButtons(tabs) {
   // fetch local storage variables
-  let localStorage = await chrome.storage.local.get(["calendar_id"]);
+  let localStorage = await browser.storage.local.get(["calendar_id"]);
   let calendarId = localStorage.calendar_id;
 
   if (calendarId !== "") {
@@ -247,7 +257,7 @@ async function handleDisplayMessages(changes, area) {
       if (msg.type === MESSAGE_TYPE.INFO) addInfoMessage(msg.message);
       else if (msg.type === MESSAGE_TYPE.ERROR) addErrorMessage(msg.message);
     });
-    await chrome.storage.local.set({ messages: [] });
+    await browser.storage.local.set({ messages: [] });
   }
 };
 
@@ -323,7 +333,7 @@ function addInfoMessage(message) {
  * @brief Displays messages currently in local storage and then clears storage.
  */
 async function displayMessages() {
-  const { messages } = await chrome.storage.local.get(["messages"]);
+  const { messages } = await browser.storage.local.get(["messages"]);
   if (messages && messages.length > 0) {
     messages.forEach((message) => {
       if (message.type == MESSAGE_TYPE.INFO) {
@@ -332,7 +342,7 @@ async function displayMessages() {
         addErrorMessage(message.message)
       }
     });
-    await chrome.storage.local.set({ messages: [] });
+    await browser.storage.local.set({ messages: [] });
   }
 }
 
@@ -341,8 +351,8 @@ async function displayMessages() {
  */
 export async function wakeServiceWorker() {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'PING' }, (response) => {
-      if (chrome.runtime.lastError) {
+    browser.runtime.sendMessage({ type: 'PING' }, (response) => {
+      if (browser.runtime.lastError) {
         // Worker was sleeping — it's now restarting, give it a moment
         setTimeout(resolve, 200);
       } else {

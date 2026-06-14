@@ -15,11 +15,11 @@
   },
   "content_scripts": [
     {
-      "js": ["src/contentScripts/userContentScript.js"],
+      "js": ["src/browser-polyfill.js", "src/contentScripts/userContentScript.js"],
       "matches": ["https://www.shiftgen.com/member/multi_site_schedule*"]
     },
     {
-      "js": ["src/contentScripts/adminContentScript.js"],
+      "js": ["src/browser-polyfill.js", "src/contentScripts/adminContentScript.js"],
       "matches": ["https://www.shiftgen.com/admin/index", "https://www.shiftgen.com/member/schedule*"]
     }
   ],
@@ -27,6 +27,7 @@
     {
       "matches": ["https://www.shiftgen.com/*"],
       "resources": [
+        "src/browser-polyfill.js",
         "src/shiftgen/common.js",
         "src/shiftgen/Scraper.js",
         "src/shiftgen/UserScraper.js",
@@ -41,17 +42,6 @@
   "permissions": [
     "storage",
     "identity",
-    "identity.email",
-    "tabs",
-    "notifications"
-  ],
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4PcYIqvt0Z9vWB7u4FzyL4X5CMLDI5Dhvc15d2lGXZ2NLwItvOybUGVROLnkIhdyhQsICzBqFgfBPY1JDHsDx/3qdJxl80P2g6RDBvZpbbcPUvPFDivFnshZYwp0GDpldugC9FYBY8PVTxIfd9YyGVqr6y5hTEjFvfkviHUrj4x3fiTUV+j9H48CMWPhYwVLXC9GrD0KwZ7NjbL2TM9xrjoN+WQrmtXZxr94O5iKzldurxSBqbO/zkwtTR6ueM6diNsl31F/rZOoq63voFbvQ+oeIp7PYAXoiHdf7SvgCwUjqsNBGCvJ3KjCmovV2sPF9IkVhCpguiNbdN/szW7LwIDAQAB",
-  "oauth2": {
-    "client_id": "1000397082507-aulavldtgrqo7rahh1llrpga5mmimnaj.apps.googleusercontent.com",
-    "scopes": [
-      "profile",
-      "email",
-      "https://www.googleapis.com/auth/calendar"
-    ]
-  }
+    "tabs"
+  ]
 }

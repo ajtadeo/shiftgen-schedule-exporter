@@ -20,7 +20,7 @@ export class PaScraper extends Scraper {
    */
   async scrape() {
     // Get user shifts from chrome local storage
-    let localStorage = await chrome.storage.local.get(["shifts"])
+    let localStorage = await browser.storage.local.get(["shifts"])
     const userShifts = Object.values(localStorage["shifts"])
     if (userShifts.length === 0) {
       throw new Error("User shifts have not been set");
@@ -55,7 +55,7 @@ export class PaScraper extends Scraper {
     }
 
     // Update chrome local storage
-    await chrome.storage.local.set({
+    await browser.storage.local.set({
       "shifts": localStorage["shifts"],
     });
 

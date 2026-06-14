@@ -23,13 +23,13 @@ export class UserScraper extends Scraper {
     const shifts = this.getAllShifts();
 
     // Update chrome local storage
-    let localStorage = await chrome.storage.local.get(["shifts"])
+    let localStorage = await browser.storage.local.get(["shifts"])
     for (const shift of shifts) {
       const shiftJSON = shift.getJSON();
       localStorage["shifts"][shiftJSON.startTime] = shiftJSON;
     }
 
-    await chrome.storage.local.set({
+    await browser.storage.local.set({
       "shifts": localStorage["shifts"],
     });
   }

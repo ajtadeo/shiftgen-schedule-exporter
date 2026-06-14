@@ -14,7 +14,7 @@ let messageQueue = [];
  * @brief Creates a new TaskManager if it hasn't already been initialized
  */
 async function initTaskManager() {
-  const saved = await chrome.storage.local.get("workflow");
+  const saved = await browser.storage.local.get("workflow");
   const defaultWorkflow = {
     state: STATE.IDLE,
     taskStates: defaultTaskStates(),
@@ -34,11 +34,11 @@ async function initTaskManager() {
  * @brief Listener that initializes local storage variables on extension install
  * and update.
  */
-chrome.runtime.onInstalled.addListener(async (details) => {
+browser.runtime.onInstalled.addListener(async (details) => {
   if (details.reason == "install" || details.reason == "update") {
     // set local storage variables
     let now = new Date;
-    await chrome.storage.local.set({
+    await browser.storage.local.set({
       shifts: {},
       calendar_id: "",
       target_month: now.toLocaleString('default', { month: 'long', timeZone: 'UTC' }),
@@ -59,13 +59,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 /**
  * @brief Listener that initializes TaskManager when Chrome restarts.
  */
-chrome.runtime.onStartup.addListener(initTaskManager);
+browser.runtime.onStartup.addListener(initTaskManager);
 
 /**
  * @brief Main message listener which waits until the TaskManager is ready
  * before handling an incoming message.
  */
-chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
   // Handle service worker wake
   if (msg.type === 'PING') {
     sendResponse({ type: 'PONG' });

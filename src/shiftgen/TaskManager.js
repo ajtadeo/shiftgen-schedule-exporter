@@ -3,7 +3,7 @@
  * @brief Class for scheduling tasks for multi-tab workflow
  */
 
-import { TASKS, STATE, infoBadge, errorBadge } from "./common.js"
+import { TASKS, STATE, defaultTaskStates, infoBadge, errorBadge } from "./common.js"
 
 /**
  * @class TaskManager
@@ -18,13 +18,9 @@ export class TaskManager {
     console.log("Created TaskManager");
 
     // Initialize task states
-    this.state = workflow.state ?? STATE.IDLE;
-    this.taskStates = workflow.taskStates ?? {
-      0: { status: 'idle', tabId: null, result: null },
-      1: { status: 'idle', tabId: null, result: null },
-      2: { status: 'idle', tabId: null, result: null }
-    };
-    this.pendingSchedules = workflow.pendingSchedules ?? [];
+    this.state = workflow.state;
+    this.taskStates = workflow.taskStates;
+    this.pendingSchedules = workflow.pendingSchedules;
 
     // Initialize listener for logged out state
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -34,7 +30,7 @@ export class TaskManager {
       if (changeInfo.url && changeInfo.url === "https://www.shiftgen.com/") {
         this.state = STATE.IDLE;
         await this.saveWorkflow();
-        errorBadge("Not logged into ShiftGen. Please log in and try again.");
+        await errorBadge("Oops, logged out of ShiftGen. Please log in and try again.");
         chrome.tabs.remove(tabId);
       }
     });
@@ -230,14 +226,10 @@ export class TaskManager {
 
       await this.closeTabs();
       this.state = STATE.IDLE;
-      this.taskStates = {
-        0: { status: 'idle', tabId: null, result: null },
-        1: { status: 'idle', tabId: null, result: null },
-        2: { status: 'idle', tabId: null, result: null }
-      };
+      this.taskStates = defaultTaskStates();
 
       await this.saveWorkflow();
-      infoBadge("Completed scraping shifts", "🐻");
+      await infoBadge("Completed scraping shifts", "🐻");
     } else {
       this.state = STATE.IDLE;
       await this.saveWorkflow();
@@ -263,7 +255,7 @@ export class TaskManager {
     console.error(`Task ${taskId} failed:`, error);
     console.log(this.taskStates);
     await this.closeTabs();
-    errorBadge(`Task ${taskId} failed: ${error}`);
+    await errorBadge(`Task ${taskId} failed: ${error}`);
   }
 
   /**

@@ -5,12 +5,19 @@
 
 import { TASKS, infoBadge, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
 
+// Window events
+window.addEventListener("DOMContentLoaded", () => loadPopup());
+
+// Chrome events
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => handleToggleButtons(tabs));
+chrome.storage.onChanged.addListener((changes, area) => handleDisplayMessages(changes, area));
+
 /**
- * @brief Main window onload function.
+ * @brief Main initialization function on popup load.
  */
-window.onload = async function () {
+export async function loadPopup() {
   // handle incoming messages in local storage
-  clearBadge();
+  await clearBadge();
   await displayMessages();
 
   // set up google calendar export button
@@ -18,7 +25,7 @@ window.onload = async function () {
     let localStorage = await chrome.storage.local.get(["shifts", "calendar_id"]);
 
     if (localStorage.calendar_id === "") {
-      errorBadge();
+      await errorBadge();
       addErrorMessage("Please set Calendar ID before exporting to Google Calendar.");
       return;
     }
@@ -39,10 +46,10 @@ window.onload = async function () {
       }
 
       if (!postedAllEvents) {
-        errorBadge();
+        await errorBadge();
         addErrorMessage(`Failed to export shifts to Google Calendar: ${errorMessage}. Please try again.`);
       } else {
-        infoBadge("Successfully exported shifts to Google Calendar!", "🪁");
+        await infoBadge("Successfully exported shifts to Google Calendar!", "🪁");
       }
 
       document.querySelector("#google-calendar-export-button").disabled = false;
@@ -59,18 +66,19 @@ window.onload = async function () {
     let localStorage = await chrome.storage.local.get(["target_month", "target_year"]);
 
     if (localStorage.target_month === "") {
-      errorBadge();
+      await errorBadge();
       addErrorMessage("Please set target month before scraping shifts.");
       return;
     }
 
     if (localStorage.target_year === "") {
-      errorBadge();
+      await errorBadge();
       addErrorMessage("Please set target year before scraping shifts.");
       return;
     }
 
     // Start task workflow
+    await wakeServiceWorker();
     chrome.runtime.sendMessage({ type: 'START' });
   })
 
@@ -115,7 +123,6 @@ window.onload = async function () {
         console.error("Error saving to storage:", chrome.runtime.lastError);
       } else {
         document.querySelector("#calendar-id-button").disabled = true;
-        // document.querySelector("#calendar-id-input").disabled = true;
         document.querySelector("#calendar-id-message").style.visibility = "visible"
         document.querySelector("#google-calendar-export-button").disabled = false;
         console.log("Calendar ID saved:", calendarId);
@@ -202,22 +209,18 @@ window.onload = async function () {
   }
 
   // handle error message close
-  document.querySelector("#messages").addEventListener("click", () => {
+  document.querySelector("#messages").addEventListener("click", (event) => {
     if (event.target.classList.contains('message-close-btn')) {
       event.target.closest('.message').remove();
     }
   });
-
-  // handle badge clear on unload
-  // TODO: this isn't actually working right now
-  window.addEventListener("unload", () => {
-    clearBadge();
-  });
 };
-/////// window.onload
 
-// enable/disable scrape buttons based on status flags
-chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+/**
+ * @brief Toggle popup buttons based on status flags.
+ * @param {*} tabs
+ */
+async function handleToggleButtons(tabs) {
   // fetch local storage variables
   let localStorage = await chrome.storage.local.get(["calendar_id"]);
   let calendarId = localStorage.calendar_id;
@@ -225,21 +228,28 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   if (calendarId !== "") {
     document.querySelector("#google-calendar-export-button").disabled = false;
   }
-});
+};
 
-// listen for local storage changes to display new messages while popup open
-chrome.storage.onChanged.addListener(async (changes, area) => {
+/**
+ * @brief Display messages on local storage changes while popup is open.
+ * @param {*} changes
+ * @param {*} area
+ */
+async function handleDisplayMessages(changes, area) {
   if (area !== "local" || !changes.messages) return;
   const newMessages = changes.messages.newValue || [];
   const oldMessages = changes.messages.oldValue || [];
-  // Only show messages that were just added
-  const added = newMessages.slice(oldMessages.length);
-  added.forEach(msg => {
-    if (msg.type === MESSAGE_TYPE.INFO) addInfoMessage(msg.message);
-    else if (msg.type === MESSAGE_TYPE.ERROR) addErrorMessage(msg.message);
-  });
-  await chrome.storage.local.set({ messages: [] });
-});
+
+  if (newMessages && newMessages.length > 0) {
+    // Only show messages that were just added
+    const added = newMessages.slice(oldMessages.length);
+    added.forEach(msg => {
+      if (msg.type === MESSAGE_TYPE.INFO) addInfoMessage(msg.message);
+      else if (msg.type === MESSAGE_TYPE.ERROR) addErrorMessage(msg.message);
+    });
+    await chrome.storage.local.set({ messages: [] });
+  }
+};
 
 /**
  * @brief Sends a POST request to create a new event for shift in Google Calendar
@@ -324,4 +334,20 @@ async function displayMessages() {
     });
     await chrome.storage.local.set({ messages: [] });
   }
+}
+
+/**
+ * @brief Wakes service worker by sending PING/PONG message.
+ */
+export async function wakeServiceWorker() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'PING' }, (response) => {
+      if (chrome.runtime.lastError) {
+        // Worker was sleeping — it's now restarting, give it a moment
+        setTimeout(resolve, 200);
+      } else {
+        resolve();
+      }
+    });
+  });
 }

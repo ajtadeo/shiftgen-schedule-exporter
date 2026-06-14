@@ -5,17 +5,13 @@
 
 import { jest } from '@jest/globals';
 import { TaskManager } from '../src/shiftgen/TaskManager.js';
-import { TASKS, STATE, MESSAGE_TYPE } from '../src/shiftgen/common.js';
+import { TASKS, STATE, MESSAGE_TYPE, defaultTaskStates } from '../src/shiftgen/common.js';
 
 /** @brief Returns a fresh IDLE workflow object */
 function idleWorkflow() {
   return {
     state: STATE.IDLE,
-    taskStates: {
-      0: { status: 'idle', tabId: null, result: null },
-      1: { status: 'idle', tabId: null, result: null },
-      2: { status: 'idle', tabId: null, result: null }
-    },
+    taskStates: defaultTaskStates(),
     pendingSchedules: []
   };
 }
@@ -37,6 +33,7 @@ beforeEach(() => {
   chrome.storage.local.set.mockResolvedValue(undefined);
   chrome.tabs.sendMessage.mockResolvedValue(undefined);
   chrome.tabs.update.mockResolvedValue(undefined);
+  chrome.tabs.remove.mockResolvedValue(undefined);
 
   chrome.storage.local.get.mockImplementation((keys, callback) => {
     const result = {

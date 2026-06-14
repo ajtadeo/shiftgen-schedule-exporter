@@ -6,6 +6,7 @@
 import { jest } from '@jest/globals';
 import { MESSAGE_TYPE } from '../src/shiftgen/common.js';
 import { makeShift, defaultStorage } from "./testHelpers.js";
+import { wakeServiceWorker } from '../src/popup/popup.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -30,6 +31,10 @@ beforeEach(() => {
   });
   chrome.storage.local.set.mockResolvedValue(undefined);
   chrome.runtime.sendMessage.mockResolvedValue(undefined);
+  chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+    if (msg.type === 'PING' && callback) callback({ type: 'PONG' });
+    return Promise.resolve();
+  });
   chrome.tabs.query.mockImplementation((query, callback) => callback([]));
 });
 
@@ -38,14 +43,17 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-// Dynamically import popup.js after DOM is set up so module-level code runs
 async function loadPopup() {
   jest.resetModules();
-  await import('../src/popup/popup.js');
-  // Trigger onload
-  window.dispatchEvent(new Event('load'));
-  // Flush microtasks
-  await new Promise(r => setTimeout(r, 0));
+  const mod = await import('../src/popup/popup.js');
+  await mod.loadPopup();
+  await new Promise(r => setTimeout(r, 50));
+}
+
+async function unloadPopup() {
+  const mod = await import('../src/popup/popup.js');
+  await mod.unloadPopup();
+  await new Promise(r => setTimeout(r, 50));
 }
 
 // ─── displayMessages ────────────────────────────────────────────────────────
@@ -108,11 +116,20 @@ describe('displayMessages on load', () => {
   });
 });
 
-// ─── clearBadge on load ─────────────────────────────────────────────────────
+// ─── clearBadge on load and unload ───────────────────────────────────────────
 
 describe('clearBadge on load', () => {
   test('clears the badge when popup opens', async () => {
     await loadPopup();
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: '' });
+  });
+});
+
+describe('clearBadge on unload', () => {
+  test('clears the badge when popup closes', async () => {
+    await loadPopup();
+    chrome.action.setBadgeText.mockReset();
+    await unloadPopup();
     expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: '' });
   });
 });
@@ -418,6 +435,7 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
     expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
   });
 
@@ -426,6 +444,7 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
     expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
   });
@@ -441,6 +460,7 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
     expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
   });
@@ -539,4 +559,48 @@ describe('chrome.tabs.query on load', () => {
     await loadPopup();
     expect(document.querySelector('#google-calendar-export-button').disabled).toBe(true);
   });
+});
+
+// ─── wakeServiceWorker ──────────────────────────────────────────────────────
+
+describe('wakeServiceWorker', () => {
+  test('resolves immediately when worker responds with PONG', async () => {
+    await expect(wakeServiceWorker()).resolves.toBeUndefined();
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+  });
+
+  test('waits 200ms and resolves when worker is disconnected', async () => {
+    jest.useFakeTimers();
+    chrome.runtime.sendMessage.mockImplementation((msg, callback) => {
+      Object.defineProperty(chrome.runtime, 'lastError', {
+        get: () => ({ message: 'Could not establish connection' }),
+        configurable: true
+      });
+      callback();
+      Object.defineProperty(chrome.runtime, 'lastError', {
+        get: () => undefined,
+        configurable: true
+      });
+    });
+
+    const promise = wakeServiceWorker();
+    jest.advanceTimersByTime(200);
+    await expect(promise).resolves.toBeUndefined();
+    jest.useRealTimers();
+  });
+
+  test('scrape button calls wakeServiceWorker before sending START', async () => {
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      const result = defaultStorage({ target_month: 'March', target_year: '2026' });
+      if (callback) { callback(result); return undefined; }
+      return Promise.resolve(result);
+    });
+
+    await loadPopup();
+    document.querySelector('#scrape-button').click();
+    await new Promise(r => setTimeout(r, 50));
+
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
+  }, 10000); // increase timeout as safety net
 });

@@ -4,7 +4,7 @@
  */
 
 import { TaskManager } from "./shiftgen/TaskManager.js"
-import { STATE } from "./shiftgen/common.js";
+import { STATE, defaultTaskStates } from "./shiftgen/common.js";
 
 let manager = null;
 let ready = false;
@@ -15,7 +15,12 @@ let messageQueue = [];
  */
 async function initTaskManager() {
   const saved = await chrome.storage.local.get("workflow");
-  manager = new TaskManager(saved.workflow);
+  const defaultWorkflow = {
+    state: STATE.IDLE,
+    taskStates: defaultTaskStates(),
+    pendingSchedules: []
+  }
+  manager = new TaskManager(saved.workflow ?? defaultWorkflow);
   ready = true;
 
   // Process messages that were queued during initialization
@@ -40,22 +45,34 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       target_year: now.getUTCFullYear().toString(),
       workflow: {
         state: STATE.IDLE,
-        taskStates: {
-          0: { status: 'idle', tabId: null, result: null },
-          1: { status: 'idle', tabId: null, result: null },
-          2: { status: 'idle', tabId: null, result: null }
-        },
+        taskStates: defaultTaskStates(),
         pendingSchedules: []
-      }
+      },
+      messages: []
     });
+
+    // Init for first install
+    initTaskManager();
   }
 });
+
+/**
+ * @brief Listener that initializes TaskManager when Chrome restarts.
+ */
+chrome.runtime.onStartup.addListener(initTaskManager);
 
 /**
  * @brief Main message listener which waits until the TaskManager is ready
  * before handling an incoming message.
  */
 chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
+  // Handle service worker wake
+  if (msg.type === 'PING') {
+    sendResponse({ type: 'PONG' });
+    return true;
+  }
+
+  // Handle messages to TaskManager
   if (!ready) {
     messageQueue.push({ msg, sender, sendResponse });
   } else {
@@ -64,4 +81,5 @@ chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
   return true; // async response
 });
 
+// Init on every service worker boot
 initTaskManager();

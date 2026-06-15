@@ -5,28 +5,28 @@
 
 (async () => {
   const userScraper = await import(browser.runtime.getURL('src/shiftgen/UserScraper.js'));
-  const paScraper = await import(browser.runtime.getURL('src/shiftgen/PaScraper.js'));
+  const paScraper = await import(browser.runtime.getURL('src/shiftgen/PaNpScraper.js'));
   const doctorScraper = await import(browser.runtime.getURL('src/shiftgen/DoctorScraper.js'));
   const common = await import(browser.runtime.getURL('src/shiftgen/common.js'));
 
   const siteStr = document.querySelectorAll('button[data-action="click->button-dropdown-component#toggle"]')[2].textContent.trim();
 
-  if (siteStr === common.TASKS.PA.site) {
-    const scraper = new paScraper.PaScraper();
+  if (siteStr === common.TASKS.PA_NP.site) {
+    const scraper = new paScraper.PaNpScraper();
     browser.runtime.sendMessage({
-      type: 'CONTENT_SCRIPT_READY',
-      taskId: common.TASKS.PA.id
+      id: common.MESSAGE_IDS.CONTENT_SCRIPT_READY,
+      taskId: common.TASKS.PA_NP.id
     });
   } else if (siteStr === common.TASKS.DOCTOR.site) {
     const scraper = new doctorScraper.DoctorScraper();
     browser.runtime.sendMessage({
-      type: 'CONTENT_SCRIPT_READY',
+      id: common.MESSAGE_IDS.CONTENT_SCRIPT_READY,
       taskId: common.TASKS.DOCTOR.id
     });
   } else if (siteStr === common.TASKS.USER.site) {
     const scraper = new userScraper.UserScraper();
     browser.runtime.sendMessage({
-      type: 'CONTENT_SCRIPT_READY',
+      id: common.MESSAGE_IDS.CONTENT_SCRIPT_READY,
       taskId: common.TASKS.USER.id
     });
   }

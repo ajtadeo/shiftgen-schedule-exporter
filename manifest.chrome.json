@@ -31,7 +31,7 @@
         "src/shiftgen/common.js",
         "src/shiftgen/Scraper.js",
         "src/shiftgen/UserScraper.js",
-        "src/shiftgen/PaScraper.js",
+        "src/shiftgen/PaNpScraper.js",
         "src/shiftgen/DoctorScraper.js"
       ]
     }

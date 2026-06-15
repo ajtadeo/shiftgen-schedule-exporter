@@ -3,7 +3,7 @@
  * @brief JavaScript for extension popup.
  */
 
-import { TASKS, infoBadge, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
+import { TASKS, MESSAGE_IDS, infoBadge, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
 import { getAccessToken } from "../googleAuth.js";
 
 // Window events
@@ -89,7 +89,7 @@ export async function loadPopup() {
 
     // Start task workflow
     await wakeServiceWorker();
-    browser.runtime.sendMessage({ type: 'START' });
+    browser.runtime.sendMessage({ id: MESSAGE_IDS.START });
   })
 
   // populate shifts table
@@ -103,18 +103,7 @@ export async function loadPopup() {
     clone.querySelector(".shift-end").textContent = new Date(value.endTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
     clone.querySelector(".shift-location").textContent = value.location;
     clone.querySelector(".shift-provider-name").textContent = value.providerName;
-
-    let providerType;
-    if (value.providerType === TASKS.DOCTOR.id) {
-      providerType = "Doctor"
-    } else if (value.providerType === TASKS.PA.id) {
-      providerType = "PA"
-    } else if (value.providerType === TASKS.USER.id) {
-      providerType = "Unknown"
-    } else {
-      providerType = "Invalid Type"
-    }
-    clone.querySelector(".shift-provider-type").textContent = providerType;
+    clone.querySelector(".shift-provider-type").textContent = value.providerType;
     clone.querySelector(".shift-overnight").textContent = value.overnight;
     tbody.appendChild(clone);
   }
@@ -351,7 +340,7 @@ async function displayMessages() {
  */
 export async function wakeServiceWorker() {
   return new Promise((resolve) => {
-    browser.runtime.sendMessage({ type: 'PING' }, (response) => {
+    browser.runtime.sendMessage({ id: MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE }, (response) => {
       if (browser.runtime.lastError) {
         // Worker was sleeping — it's now restarting, give it a moment
         setTimeout(resolve, 200);

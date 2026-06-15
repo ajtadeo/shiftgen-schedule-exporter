@@ -4,7 +4,7 @@
  */
 
 import { jest } from '@jest/globals';
-import { MESSAGE_TYPE } from '../src/shiftgen/common.js';
+import { MESSAGE_TYPE, MESSAGE_IDS, TASKS } from '../src/shiftgen/common.js';
 import { makeShift, defaultStorage } from "./testHelpers.js";
 import { wakeServiceWorker } from '../src/popup/popup.js';
 import fs from 'fs';
@@ -32,7 +32,7 @@ beforeEach(() => {
   browser.storage.local.set.mockResolvedValue(undefined);
   browser.runtime.sendMessage.mockResolvedValue(undefined);
   browser.runtime.sendMessage.mockImplementation((msg, callback) => {
-    if (msg.type === 'PING' && callback) callback({ type: 'PONG' });
+    if (msg.id === MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE && callback) callback({ id: MESSAGE_IDS.REPLY_SERVICE_WORKER_WAKE });
     return Promise.resolve();
   });
   browser.tabs.query.mockImplementation((query, callback) => callback([]));
@@ -146,7 +146,7 @@ describe('shifts table', () => {
 
   test('shows "Doctor" for DOCTOR providerType', async () => {
     browser.storage.local.get.mockImplementation((keys, callback) => {
-      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 1 }) } });
+      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: TASKS.DOCTOR.providerType }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
     });
@@ -155,37 +155,26 @@ describe('shifts table', () => {
     expect(document.querySelector('.shift-provider-type').textContent).toBe('Doctor');
   });
 
-  test('shows "PA" for PA providerType', async () => {
+  test('shows "PA/NP" for PA providerType', async () => {
     browser.storage.local.get.mockImplementation((keys, callback) => {
-      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 2 }) } });
+      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: TASKS.PA_NP.providerType }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
     });
 
     await loadPopup();
-    expect(document.querySelector('.shift-provider-type').textContent).toBe('PA');
+    expect(document.querySelector('.shift-provider-type').textContent).toBe('PA/NP');
   });
 
-  test('shows "Unknown" for USER providerType', async () => {
+  test('shows "User" for USER providerType', async () => {
     browser.storage.local.get.mockImplementation((keys, callback) => {
-      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 0 }) } });
+      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: TASKS.USER.providerType }) } });
       if (callback) { callback(result); return undefined; }
       return Promise.resolve(result);
     });
 
     await loadPopup();
-    expect(document.querySelector('.shift-provider-type').textContent).toBe('Unknown');
-  });
-
-  test('shows "Invalid Type" for unknown providerType', async () => {
-    browser.storage.local.get.mockImplementation((keys, callback) => {
-      const result = defaultStorage({ shifts: { s1: makeShift({ providerType: 99 }) } });
-      if (callback) { callback(result); return undefined; }
-      return Promise.resolve(result);
-    });
-
-    await loadPopup();
-    expect(document.querySelector('.shift-provider-type').textContent).toBe('Invalid Type');
+    expect(document.querySelector('.shift-provider-type').textContent).toBe('User');
   });
 
   test('hides no-shifts message when shifts exist', async () => {
@@ -426,8 +415,8 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ id: MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE }, expect.any(Function));
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ id: MESSAGE_IDS.START });
   });
 
   test('shows error and does not send START when target_month is empty', async () => {
@@ -435,8 +424,8 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ id: MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE }, expect.any(Function));
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ id: MESSAGE_IDS.START });
     expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
   });
 
@@ -451,8 +440,8 @@ describe('scrape button', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ id: MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE }, expect.any(Function));
+    expect(browser.runtime.sendMessage).not.toHaveBeenCalledWith({ id: MESSAGE_IDS.START });
     expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: 'ERR' });
   });
 });
@@ -557,7 +546,7 @@ describe('browser.tabs.query on load', () => {
 describe('wakeServiceWorker', () => {
   test('resolves immediately when worker responds with PONG', async () => {
     await expect(wakeServiceWorker()).resolves.toBeUndefined();
-    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ id: MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE }, expect.any(Function));
   });
 
   test('waits 200ms and resolves when worker is disconnected', async () => {
@@ -591,7 +580,7 @@ describe('wakeServiceWorker', () => {
     document.querySelector('#scrape-button').click();
     await new Promise(r => setTimeout(r, 50));
 
-    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'PING' }, expect.any(Function));
-    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ type: 'START' });
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ id: MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE }, expect.any(Function));
+    expect(browser.runtime.sendMessage).toHaveBeenCalledWith({ id: MESSAGE_IDS.START });
   }, 10000); // increase timeout as safety net
 });

@@ -1,6 +1,6 @@
 /**
- * @file PaScraper.test.js
- * @brief Tests for PaScraper
+ * @file PaNpScraper.test.js
+ * @brief Tests for PaNpScraper
  *
  * HTML fixture: pa_calendar.html
  *   - 234 cells, 129 parseable CHOC shifts (excludes 104 SJH shifts)
@@ -12,10 +12,10 @@
  *   epoch 1760137200000  PA    => MARONY (8.5h overlap)
  *
  * Critical behavioral difference vs DoctorScraper:
- *   PaScraper does NOT filter candidates by location — any overlapping PA shift wins.
+ *   PaNpScraper does NOT filter candidates by location — any overlapping PA shift wins.
  */
 
-import { PaScraper } from "../src/shiftgen/PaScraper.js";
+import { PaNpScraper } from "../src/shiftgen/PaNpScraper.js";
 import { Shift } from "../src/shiftgen/Scraper.js";
 import { TASKS } from "../src/shiftgen/common.js";
 import { loadHtml, makeStoredShift } from "./testHelpers.js";
@@ -35,13 +35,13 @@ afterEach(() => {
 // pa_calendar.html
 // ===========================================================================
 
-describe("PaScraper with pa_calendar.html", () => {
+describe("PaNpScraper with pa_calendar.html", () => {
   beforeEach(() => {
     document.documentElement.innerHTML = loadHtml("pa_calendar.html");
   });
 
-  test("is an instance of PaScraper", () => {
-    expect(new PaScraper()).toBeInstanceOf(PaScraper);
+  test("is an instance of PaNpScraper", () => {
+    expect(new PaNpScraper()).toBeInstanceOf(PaNpScraper);
   });
 
   // --- scrape ---
@@ -52,11 +52,11 @@ describe("PaScraper with pa_calendar.html", () => {
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
 
-    await new PaScraper().scrape();
+    await new PaNpScraper().scrape();
 
     const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("MARONY");
-    expect(stored[key].providerType).toBe(TASKS.PA.id);
+    expect(stored[key].providerType).toBe(TASKS.PA_NP.providerType);
   });
 
     test("scrape() assigns GO to a CHOC 0600-1600 user shift (8h overlap)", async () => {
@@ -65,25 +65,25 @@ describe("PaScraper with pa_calendar.html", () => {
       shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "CHOC") }
     });
 
-    await new PaScraper().scrape();
+    await new PaNpScraper().scrape();
 
     const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("GO");
-    expect(stored[key].providerType).toBe(TASKS.PA.id);
+    expect(stored[key].providerType).toBe(TASKS.PA_NP.providerType);
   });
 
   test("scrape() throws when shifts storage is empty", async () => {
     browser.storage.local.get.mockResolvedValue({ shifts: {} });
-    await expect(new PaScraper().scrape()).rejects.toThrow("User shifts have not been set");
+    await expect(new PaNpScraper().scrape()).rejects.toThrow("User shifts have not been set");
   });
 
   test("scrape() skips already-claimed shifts", async () => {
     const key = 1760137200000;
     browser.storage.local.get.mockResolvedValue({
-      shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA", "ALREADY", TASKS.DOCTOR.id) }
+      shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA", "ALREADY", TASKS.DOCTOR.providerType) }
     });
 
-    await new PaScraper().scrape();
+    await new PaNpScraper().scrape();
 
     const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("ALREADY");
@@ -95,7 +95,7 @@ describe("PaScraper with pa_calendar.html", () => {
       shifts: { [key]: makeStoredShift(key, key + 8.5 * 3600_000, "PA") }
     });
 
-    const result = await new PaScraper().scrape();
+    const result = await new PaNpScraper().scrape();
     expect(result.success).toBe(true);
     expect(typeof result.timestamp).toBe("number");
   });
@@ -103,14 +103,14 @@ describe("PaScraper with pa_calendar.html", () => {
   // --- getAllShifts ---
 
   test("getAllShifts returns 130 Shift instances from pa_calendar.html (excludes SJH, PIT)", () => {
-    const shifts = new PaScraper().getAllShifts();
+    const shifts = new PaNpScraper().getAllShifts();
     expect(shifts.length).toBe(130);
     shifts.forEach(s => expect(s).toBeInstanceOf(Shift));
   });
 
-  test("getAllShifts sets providerType PA on all shifts", () => {
-    new PaScraper().getAllShifts().forEach(s =>
-      expect(s.providerType).toBe(TASKS.PA.id)
+  test("getAllShifts sets providerType PA/NP on all shifts", () => {
+    new PaNpScraper().getAllShifts().forEach(s =>
+      expect(s.providerType).toBe(TASKS.PA_NP.providerType)
     );
   });
 
@@ -118,19 +118,19 @@ describe("PaScraper with pa_calendar.html", () => {
 
   test("getAllShifts skips shifts whose name contains 'SJH'", () => {
     // pa_calendar.html contains 104 SJH shifts — none should appear in results
-    const shifts = new PaScraper().getAllShifts();
+    const shifts = new PaNpScraper().getAllShifts();
     shifts.forEach(s => expect(s.location).not.toBe("SJH"));
   });
 
   test("scrape() does not assign a provider found only on a skipped SJH shift", async () => {
     // Inject a user shift that would only overlap with an SJH time window.
-    // Even if an SJH-named PA shift perfectly overlaps, it must be invisible.
+    // Even if an SJH-named PA/NP shift perfectly overlaps, it must be invisible.
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 10 * 3600_000; // 10:00
     const userEnd   = base + 20 * 3600_000; // 20:00
 
-    const sjhOnly = new Shift(userStart, userEnd, "SJH", false, TASKS.PA.id, "SJHPA");
-    const scraper = new PaScraper();
+    const sjhOnly = new Shift(userStart, userEnd, "SJH", false, TASKS.PA_NP.providerType, "SJHPA");
+    const scraper = new PaNpScraper();
     scraper.getAllShifts = () => [];          // getAllShifts correctly returns nothing for SJH
 
     browser.storage.local.get.mockResolvedValue({
@@ -148,21 +148,21 @@ describe("PaScraper with pa_calendar.html", () => {
 // getAllShifts with overlapping shifts
 // ===========================================================================
 
-describe("PaScraper overlap selection logic (unit)", () => {
+describe("PaNpScraper overlap selection logic (unit)", () => {
   beforeEach(() => {
     document.documentElement.innerHTML = loadHtml("pa_calendar.html");
   });
 
-  test("matches PA shifts WITHOUT a location filter", async () => {
-    // Key difference from DoctorScraper: location is irrelevant for PA matching
+  test("matches PA/NP shifts WITHOUT a location filter", async () => {
+    // Key difference from DoctorScraper: location is irrelevant for PA/NP matching
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
-    const paShift   = new Shift(userStart, userStart + 8 * 3600_000, "CHOC", false, TASKS.PA.id, "TESTPA");
+    const paShift   = new Shift(userStart, userStart + 8 * 3600_000, "CHOC", false, TASKS.PA_NP.providerType, "TESTPA");
 
-    const scraper = new PaScraper();
+    const scraper = new PaNpScraper();
     scraper.getAllShifts = () => [paShift];
     browser.storage.local.get.mockResolvedValue({
-      // User shift at "NORTH" — different from PA's "CHOC", but should still match
+      // User shift at "NORTH" — different from PA/NP's "CHOC", but should still match
       shifts: { [userStart]: makeStoredShift(userStart, userStart + 8 * 3600_000, "NORTH") }
     });
 
@@ -171,14 +171,14 @@ describe("PaScraper overlap selection logic (unit)", () => {
     expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("TESTPA");
   });
 
-  test("picks the PA shift with the greatest overlap", async () => {
+  test("picks the PA/NP shift with the greatest overlap", async () => {
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
     const userEnd   = base + 16 * 3600_000;
-    const small     = new Shift(base + 6 * 3600_000, base + 10 * 3600_000, "SJH",  false, TASKS.PA.id, "SMALLPA");
-    const big       = new Shift(base + 7 * 3600_000, base + 17 * 3600_000, "CHOC", false, TASKS.PA.id, "BIGPA");
+    const small     = new Shift(base + 6 * 3600_000, base + 10 * 3600_000, "SJH",  false, TASKS.PA_NP.providerType, "SMALLPA");
+    const big       = new Shift(base + 7 * 3600_000, base + 17 * 3600_000, "CHOC", false, TASKS.PA_NP.providerType, "BIGPA");
 
-    const scraper = new PaScraper();
+    const scraper = new PaNpScraper();
     scraper.getAllShifts = () => [small, big];
     browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userEnd, "NORTH") }
@@ -189,12 +189,12 @@ describe("PaScraper overlap selection logic (unit)", () => {
     expect(browser.storage.local.set.mock.calls[0][0].shifts[userStart].providerName).toBe("BIGPA");
   });
 
-  test("does not assign when no PA shift overlaps", async () => {
+  test("does not assign when no PA/NP shift overlaps", async () => {
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
-    const noOverlap = new Shift(base + 20 * 3600_000, base + 24 * 3600_000, "SJH", false, TASKS.PA.id, "GHOST");
+    const noOverlap = new Shift(base + 20 * 3600_000, base + 24 * 3600_000, "SJH", false, TASKS.PA_NP.providerType, "GHOST");
 
-    const scraper = new PaScraper();
+    const scraper = new PaNpScraper();
     scraper.getAllShifts = () => [noOverlap];
     browser.storage.local.get.mockResolvedValue({
       shifts: { [userStart]: makeStoredShift(userStart, userStart + 8 * 3600_000, "NORTH") }
@@ -209,10 +209,10 @@ describe("PaScraper overlap selection logic (unit)", () => {
     const base       = Date.UTC(2025, 9, 6);
     const user1Start = base + 8  * 3600_000;
     const user2Start = base + 20 * 3600_000;
-    const pa1 = new Shift(user1Start, user1Start + 8 * 3600_000, "SJH",  false, TASKS.PA.id, "PA_DAY");
-    const pa2 = new Shift(user2Start, user2Start + 8 * 3600_000, "CHOC", false, TASKS.PA.id, "PA_NIGHT");
+    const pa1 = new Shift(user1Start, user1Start + 8 * 3600_000, "SJH",  false, TASKS.PA_NP.providerType, "PA_DAY");
+    const pa2 = new Shift(user2Start, user2Start + 8 * 3600_000, "CHOC", false, TASKS.PA_NP.providerType, "PA_NIGHT");
 
-    const scraper = new PaScraper();
+    const scraper = new PaNpScraper();
     scraper.getAllShifts = () => [pa1, pa2];
     browser.storage.local.get.mockResolvedValue({
       shifts: {

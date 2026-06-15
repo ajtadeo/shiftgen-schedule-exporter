@@ -3,44 +3,63 @@
  * @brief Common constants, objects, and functions used across the application
  */
 
-export const TASKS = {
+export const TASKS = Object.freeze({
   USER: {
     id: 0,
+    providerType: "User",
     siteId: 83,
     url: "https://www.shiftgen.com/member/multi_site_schedule",
     site: "CHOC Scribe"
   },
   DOCTOR: {
     id: 1,
+    providerType: "Doctor",
     siteId: 80,
     url: "https://www.shiftgen.com/admin/index",
     site: "St Joseph/CHOC Physician"
   },
-  PA: {
+  PA_NP: {
     id: 2,
+    providerType: "PA/NP",
     siteId: 84,
     url: "https://www.shiftgen.com/admin/index",
     site: "St Joseph/CHOC MLP"
   }
-}
+});
 
-export const STATE = {
-  IDLE: 0,
-  CREATE_TAB_USER: 1,
-  CREATE_TAB_PROVIDER: 2,
-  CHANGE_SITE_USER: 3,
-  CHANGE_SITE_PA: 4,
-  CHANGE_SITE_DOCTOR: 5,
-  COLLECT_SCHEDULES: 6,
-  NAVIGATING: 7,
-  RUNNING: 8,
-  COMPLETED: 9,
-}
+export const STATE = Object.freeze({
+  IDLE: 'IDLE',
+  CREATE_TAB_USER: 'CREATE_TAB_USER',
+  CREATE_TAB_PROVIDER: 'CREATE_TAB_PROVIDER',
+  CHANGE_SITE_USER: 'CHANGE_SITE_USER',
+  CHANGE_SITE_PA: 'CHANGE_SITE_PA',
+  CHANGE_SITE_DOCTOR: 'CHANGE_SITE_DOCTOR',
+  COLLECT_SCHEDULES: 'COLLECT_SCHEDULES',
+  NAVIGATING: 'NAVIGATING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+});
 
-export const MESSAGE_TYPE = {
-  INFO: 0,
-  ERROR: 1
-}
+export const MESSAGE_IDS = Object.freeze({
+  REQUEST_SERVICE_WORKER_WAKE: 'REQUEST_SERVICE_WORKER_WAKE',
+  REPLY_SERVICE_WORKER_WAKE: 'REPLY_SERVICE_WORKER_WAKE',
+  START: 'START',
+  CONTENT_SCRIPT_READY: 'CONTENT_SCRIPT_READY',
+  TASK_RUNNING: 'TASK_RUNNING',
+  TASK_COMPLETED: 'TASK_COMPLETED',
+  TASK_FAILED: 'TASK_FAILED',
+  SCHEDULES: 'SCHEDULES',
+  TRIGGER_TASK: 'TRIGGER_TASK',
+  TRIGGER_CHANGE_SITE: 'TRIGGER_CHANGE_SITE',
+  TRIGGER_COLLECT_SCHEDULES: 'TRIGGER_COLLECT_SCHEDULES',
+  REQUEST_GOOGLE_CALENDAR_EXPORT: 'REQUEST_GOOGLE_CALENDAR_EXPORT',
+  REPLY_GOOGLE_CALENDAR_EXPORT: 'REPLY_GOOGLE_CALENDAR_EXPORT'
+});
+
+export const MESSAGE_TYPE = Object.freeze({
+  INFO: 'INFO',
+  ERROR: 'ERROR'
+});
 
 export async function infoBadge(message = "", icon) {
   if (message.length > 0) {
@@ -76,4 +95,11 @@ export function defaultTaskStates() {
     1: { status: 'idle', tabId: null, result: null },
     2: { status: 'idle', tabId: null, result: null }
   };
+}
+
+export function taskIdToProviderType(taskId) {
+  if (taskId === TASKS.USER.id) { return TASKS.USER.providerType; }
+  else if (taskId === TASKS.DOCTOR.id) { return TASKS.DOCTOR.providerType; }
+  else if (taskId === TASKS.PA_NP.id) { return TASKS.PA_NP.providerType; }
+  else { return "Invalid"; }
 }

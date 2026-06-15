@@ -1,22 +1,22 @@
 /**
- * @file PaScraper.js
- * @brief Class for scraping PA shift data
+ * @file PaNpScraper.js
+ * @brief Class for scraping PA/NP shift data
  */
 
 import { Scraper } from "./Scraper.js";
 import { TASKS } from "./common.js";
 
-export class PaScraper extends Scraper {
+export class PaNpScraper extends Scraper {
   /**
    * @brief UserScraper constructor
    */
   constructor() {
-    super(TASKS.PA)
-    console.log("Created PA scraper")
+    super(TASKS.PA_NP)
+    console.log("Created PA/NP scraper")
   }
 
   /**
-   * @brief Scrapes the PA schedule web page.
+   * @brief Scrapes the PA/NP schedule web page.
    */
   async scrape() {
     // Get user shifts from chrome local storage
@@ -40,7 +40,7 @@ export class PaScraper extends Scraper {
       let maxOverlapShift = undefined;
 
       for (const shift of shifts) {
-        // PA shifts do not have a location
+        // PA/NP shifts do not have a location
         let overlap = this.getOverlap(userShift, shift)
         if (overlap > maxOverlap) {
           maxOverlap = overlap;
@@ -50,7 +50,7 @@ export class PaScraper extends Scraper {
 
       if (maxOverlapShift !== undefined) {
         localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.providerName;
-        localStorage["shifts"][userShift.startTime]["providerType"] = TASKS.PA.id;
+        localStorage["shifts"][userShift.startTime]["providerType"] = this.providerType;
       }
     }
 

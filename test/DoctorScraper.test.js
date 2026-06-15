@@ -51,7 +51,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
 
     const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("MEHTA");
-    expect(stored[key].providerType).toBe(TASKS.DOCTOR.id);
+    expect(stored[key].providerType).toBe(TASKS.DOCTOR.providerType);
   });
 
   test("scrape() assigns YUAN to the NORTH 1330-2200 user shift (8.5h overlap)", async () => {
@@ -64,7 +64,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
 
     const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     expect(stored[key].providerName).toBe("YUAN");
-    expect(stored[key].providerType).toBe(TASKS.DOCTOR.id);
+    expect(stored[key].providerType).toBe(TASKS.DOCTOR.providerType);
   });
 
   test("scrape() does not assign a doctor to a PA-location shift (no location match)", async () => {
@@ -82,7 +82,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
   test("scrape() skips already-claimed shifts (providerName !== '')", async () => {
     const key = 1759777200000;
     browser.storage.local.get.mockResolvedValue({
-      shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX", "ALREADY_SET", TASKS.DOCTOR.id) }
+      shifts: { [key]: makeStoredShift(key, key + 8 * 3600_000, "FLEX", "ALREADY_SET", TASKS.DOCTOR.providerType) }
     });
 
     await new DoctorScraper().scrape();
@@ -130,7 +130,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
 
   test("getAllShifts sets providerType DOCTOR on all shifts", () => {
     new DoctorScraper().getAllShifts().forEach(s =>
-      expect(s.providerType).toBe(TASKS.DOCTOR.id)
+      expect(s.providerType).toBe(TASKS.DOCTOR.providerType)
     );
   });
 
@@ -153,7 +153,7 @@ describe("DoctorScraper with doctor_calendar_1.html", () => {
     const userStart = base + 10 * 3600_000;           // 10:00
     const userEnd   = base + 18 * 3600_000;           // 18:00
 
-    const sjhOnly = new Shift(userStart, userEnd, "SJH", false, TASKS.DOCTOR.id, "SJHDOC");
+    const sjhOnly = new Shift(userStart, userEnd, "SJH", false, TASKS.DOCTOR.providerType, "SJHDOC");
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [sjhOnly];            // force-inject an SJH shift
 
@@ -187,8 +187,8 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
     const userEnd   = base + 16 * 3600_000;
-    const small     = new Shift(base + 6 * 3600_000, base + 10 * 3600_000, "LOC", false, TASKS.DOCTOR.id, "SMALL");
-    const big       = new Shift(base + 7 * 3600_000, base + 17 * 3600_000, "LOC", false, TASKS.DOCTOR.id, "BIG");
+    const small     = new Shift(base + 6 * 3600_000, base + 10 * 3600_000, "LOC", false, TASKS.DOCTOR.providerType, "SMALL");
+    const big       = new Shift(base + 7 * 3600_000, base + 17 * 3600_000, "LOC", false, TASKS.DOCTOR.providerType, "BIG");
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [small, big];
@@ -204,7 +204,7 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
   test("does not assign when no doctor shift overlaps", async () => {
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
-    const noOverlap = new Shift(base + 20 * 3600_000, base + 24 * 3600_000, "LOC", false, TASKS.DOCTOR.id, "GHOST");
+    const noOverlap = new Shift(base + 20 * 3600_000, base + 24 * 3600_000, "LOC", false, TASKS.DOCTOR.providerType, "GHOST");
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [noOverlap];
@@ -220,7 +220,7 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
   test("ignores doctor shifts at a different location", async () => {
     const base      = Date.UTC(2025, 9, 6);
     const userStart = base + 8 * 3600_000;
-    const wrongLoc  = new Shift(userStart, userStart + 8 * 3600_000, "WRONGLOC", false, TASKS.DOCTOR.id, "WRONGDOC");
+    const wrongLoc  = new Shift(userStart, userStart + 8 * 3600_000, "WRONGLOC", false, TASKS.DOCTOR.providerType, "WRONGDOC");
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [wrongLoc];
@@ -237,8 +237,8 @@ describe("DoctorScraper overlap selection logic (unit)", () => {
     const base       = Date.UTC(2025, 9, 6);
     const user1Start = base + 8  * 3600_000;
     const user2Start = base + 20 * 3600_000;
-    const doc1 = new Shift(user1Start, user1Start + 8 * 3600_000, "NORTH", false, TASKS.DOCTOR.id, "DOCNORTH");
-    const doc2 = new Shift(user2Start, user2Start + 8 * 3600_000, "SOUTH", false, TASKS.DOCTOR.id, "DOCSOUTH");
+    const doc1 = new Shift(user1Start, user1Start + 8 * 3600_000, "NORTH", false, TASKS.DOCTOR.providerType, "DOCNORTH");
+    const doc2 = new Shift(user2Start, user2Start + 8 * 3600_000, "SOUTH", false, TASKS.DOCTOR.providerType, "DOCSOUTH");
 
     const scraper = new DoctorScraper();
     scraper.getAllShifts = () => [doc1, doc2];

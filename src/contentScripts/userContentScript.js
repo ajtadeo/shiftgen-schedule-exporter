@@ -10,7 +10,7 @@
   const scraper = new userScraper.UserScraper();
 
   browser.runtime.sendMessage({
-    type: 'CONTENT_SCRIPT_READY',
+    id: common.MESSAGE_IDS.CONTENT_SCRIPT_READY,
     taskId: common.TASKS.USER.id
   });
 })();

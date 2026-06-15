@@ -3,7 +3,7 @@
  * @brief Base class for scraping shift data
  */
 
-import { TASKS } from "./common.js";
+import { TASKS, MESSAGE_IDS, taskIdToProviderType } from "./common.js";
 
 const patterns = {
   1: { pattern: /^(?!SJH)(?!PIT)(\w+)\s(\d{2}|\d{4})-(\d{2}|\d{4})$/, groupNames: ["location", "start_time_str", "end_time_str"] }, // North 2130-0600
@@ -27,7 +27,7 @@ export class Shift {
     this.endTime = endTime;                    // epoch ms (int)
     this.location = location;                  // string
     this.overnight = overnight;                // bool
-    this.providerType = providerType;          // int
+    this.providerType = providerType;          // string
     this.providerName = providerName;          // string
   }
 
@@ -51,17 +51,8 @@ export class Shift {
    * @brief Prints shift data. Useful for debugging.
    */
   print() {
-    let prefix = "";
-    if (this.providerType === TASKS.DOCTOR.id) {
-      prefix = "DOCTOR";
-    } else if (this.providerType === TASKS.PA.id) {
-      prefix = "PA/NP";
-    } else if (this.providerType === TASKS.USER.id) {
-      prefix = "UNKNOWN";
-    }
-
     console.log({
-      providerType: prefix,
+      providerType: this.providerType,
       providerName: this.providerName,
       location: this.location,
       startTime: this.startTime,
@@ -79,17 +70,17 @@ export class Scraper {
   constructor(task) {
     this.taskId = task.id;
     this.siteId = task.siteId;
-    this.providerType = task.id;
+    this.providerType = task.providerType;
 
     browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-      if (message.type === 'TRIGGER_TASK' && message.taskId === this.taskId) {
+      if (message.id === MESSAGE_IDS.TRIGGER_TASK && message.taskId === this.taskId) {
         this.executeTask();
-      } else if (message.type === 'TRIGGER_CHANGE_SITE' && message.taskId === this.taskId) {
+      } else if (message.id === MESSAGE_IDS.TRIGGER_CHANGE_SITE && message.taskId === this.taskId) {
         if (message.taskToUpdate === TASKS.USER.id && !this.checkCalendarExistence()) {
           return;
         }
         this.changeSite(message.siteId);
-      } else if (message.type === 'TRIGGER_COLLECT_SCHEDULES' && message.taskId === this.taskId) {
+      } else if (message.id === MESSAGE_IDS.TRIGGER_COLLECT_SCHEDULES && message.taskId === this.taskId) {
         await this.collectSchedules();
       }
     });
@@ -102,7 +93,7 @@ export class Scraper {
     try {
       // Signal task start
       browser.runtime.sendMessage({
-        type: 'TASK_RUNNING',
+        id: MESSAGE_IDS.TASK_RUNNING,
         taskId: this.taskId
       });
 
@@ -110,16 +101,16 @@ export class Scraper {
 
       // Signal task completion
       browser.runtime.sendMessage({
-        type: 'TASK_COMPLETED',
+        id: MESSAGE_IDS.TASK_COMPLETED,
         taskId: this.taskId,
       });
 
       // TODO: Close tab
 
     } catch (error) {
-      console.error(`Task ${this.taskId} failed:`, error);
+      console.error(`[${taskIdToProviderType(this.taskId)}] failed:`, error);
       browser.runtime.sendMessage({
-        type: 'TASK_FAILED',
+        id: MESSAGE_IDS.TASK_FAILED,
         taskId: this.taskId,
         data: error.message
       });
@@ -134,14 +125,14 @@ export class Scraper {
     let button;
     if (siteId === TASKS.DOCTOR.siteId) {
       button = document.querySelector("#sites-nav-StJosephCHOCPhysician");
-    } else if (siteId === TASKS.PA.siteId) {
+    } else if (siteId === TASKS.PA_NP.siteId) {
       button = document.querySelector("#sites-nav-StJosephCHOCMLP");
     } else if (siteId === TASKS.USER.siteId) {
       button = document.querySelector("#sites-nav-CHOCScribe");
     } else {
-      console.error(`Task ${this.taskId} failed:`, error);
+      console.error(`[${taskIdToProviderType(this.taskId)}] failed:`, error);
       browser.runtime.sendMessage({
-        type: 'TASK_FAILED',
+        id: MESSAGE_IDS.TASK_FAILED,
         taskId: this.taskId,
         data: `Failed to change site for siteId: ${siteId}`
       });
@@ -166,9 +157,9 @@ export class Scraper {
     }
 
     if (publishedSchedules === null) {
-      console.error(`Task ${this.taskId} failed:`, error);
+      console.error(`[${taskIdToProviderType(this.taskId)}] failed:`, error);
       browser.runtime.sendMessage({
-        type: 'TASK_FAILED',
+        id: MESSAGE_IDS.TASK_FAILED,
         taskId: this.taskId,
         data: `Failed to navigate to schedule for taskId: ${this.taskId}`
       });
@@ -193,7 +184,7 @@ export class Scraper {
     }
 
     browser.runtime.sendMessage({
-      type: 'SCHEDULES',
+      id: MESSAGE_IDS.SCHEDULES,
       taskId: this.taskId,
       data: {
         pendingSchedules: scheduleUrls,
@@ -326,7 +317,7 @@ export class Scraper {
         endTime,
         info["location"].trim().toUpperCase(),
         overnight,
-        TASKS.USER.id,
+        this.providerType,
         ""
       )
     } else {
@@ -364,9 +355,9 @@ export class Scraper {
    */
   checkCalendarExistence() {
     if (document.querySelector(".flex-1.p-4.overflow-scroll #calendar") === null) {
-      console.error(`Task ${this.taskId} failed:`, "No user shifts available");
+      console.error(`[${taskIdToProviderType(this.taskId)}] failed:`, "No user shifts available");
       browser.runtime.sendMessage({
-        type: 'TASK_FAILED',
+        id: MESSAGE_IDS.TASK_FAILED,
         taskId: this.taskId,
         data: "No user shifts available"
       });

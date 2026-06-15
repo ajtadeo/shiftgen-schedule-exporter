@@ -4,7 +4,7 @@
  */
 
 import { TaskManager } from "./shiftgen/TaskManager.js"
-import { STATE, defaultTaskStates } from "./shiftgen/common.js";
+import { MESSAGE_IDS, STATE, defaultTaskStates } from "./shiftgen/common.js";
 
 let manager = null;
 let ready = false;
@@ -67,8 +67,8 @@ browser.runtime.onStartup.addListener(initTaskManager);
  */
 browser.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
   // Handle service worker wake
-  if (msg.type === 'PING') {
-    sendResponse({ type: 'PONG' });
+  if (msg.id === MESSAGE_IDS.REQUEST_SERVICE_WORKER_WAKE) {
+    sendResponse({ id: MESSAGE_IDS.REPLY_SERVICE_WORKER_WAKE });
     return true;
   }
 

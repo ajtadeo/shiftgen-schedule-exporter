@@ -34,14 +34,14 @@ afterEach(() => {
 // ===========================================================================
 
 describe("Shift", () => {
-  const s = new Shift(1000, 2000, "NORTH", false, TASKS.DOCTOR.id, "SMITH");
+  const s = new Shift(1000, 2000, "NORTH", false, TASKS.DOCTOR.providerType, "SMITH");
 
   test("constructor sets all properties", () => {
     expect(s.startTime).toBe(1000);
     expect(s.endTime).toBe(2000);
     expect(s.location).toBe("NORTH");
     expect(s.overnight).toBe(false);
-    expect(s.providerType).toBe(TASKS.DOCTOR.id);
+    expect(s.providerType).toBe(TASKS.DOCTOR.providerType);
     expect(s.providerName).toBe("SMITH");
   });
 
@@ -52,7 +52,7 @@ describe("Shift", () => {
       endTime: 2000,
       location: "NORTH",
       overnight: false,
-      providerType: TASKS.DOCTOR.id,
+      providerType: TASKS.DOCTOR.providerType,
       providerName: "SMITH",
     });
   });
@@ -163,13 +163,13 @@ describe("Scraper", () => {
 
     // --- USER task type ---
 
-    test("when taskId is USER, providerName is empty and providerType is USER", () => {
+    test("when taskId is USER, providerName is empty and providerType is User", () => {
       const userScraper = new Scraper(TASKS.USER);
       const cell = makeShiftCell("1700-0100 (RED)", "2026_03_10", "SMITH");
       const shift = userScraper.parseShiftCell(cell);
       expect(shift).toBeInstanceOf(Shift);
       expect(shift.providerName).toBe("");
-      expect(shift.providerType).toBe(TASKS.USER.id);
+      expect(shift.providerType).toBe(TASKS.USER.providerType);
     });
 
     // --- result from loaded HTML fixture ---
@@ -215,32 +215,32 @@ describe("Scraper", () => {
 
   describe("getOverlap", () => {
     test("returns correct overlap when ranges partially overlap", () => {
-      const a = new Shift(10, 20, "X", false, TASKS.DOCTOR.id, "A");
-      const b = new Shift(15, 25, "X", false, TASKS.USER.id, "B");
+      const a = new Shift(10, 20, "X", false, TASKS.DOCTOR.providerType, "A");
+      const b = new Shift(15, 25, "X", false, TASKS.USER.providerType, "B");
       expect(scraper.getOverlap(a, b)).toBe(5);
     });
 
     test("returns 0 when ranges do not overlap", () => {
-      const a = new Shift(0, 10, "X", false, TASKS.DOCTOR.id, "A");
-      const b = new Shift(20, 30, "X", false, TASKS.USER.id, "B");
+      const a = new Shift(0, 10, "X", false, TASKS.DOCTOR.providerType, "A");
+      const b = new Shift(20, 30, "X", false, TASKS.USER.providerType, "B");
       expect(scraper.getOverlap(a, b)).toBe(0);
     });
 
     test("returns 0 when ranges are adjacent (touching but not overlapping)", () => {
-      const a = new Shift(0, 10, "X", false, TASKS.DOCTOR.id, "A");
-      const b = new Shift(10, 20, "X", false, TASKS.USER.id, "B");
+      const a = new Shift(0, 10, "X", false, TASKS.DOCTOR.providerType, "A");
+      const b = new Shift(10, 20, "X", false, TASKS.USER.providerType, "B");
       expect(scraper.getOverlap(a, b)).toBe(0);
     });
 
     test("returns full length when one range fully contains the other", () => {
-      const outer = new Shift(0, 100, "X", false, TASKS.DOCTOR.id, "A");
-      const inner = new Shift(20, 80, "X", false, TASKS.USER.id, "B");
+      const outer = new Shift(0, 100, "X", false, TASKS.DOCTOR.providerType, "A");
+      const inner = new Shift(20, 80, "X", false, TASKS.USER.providerType, "B");
       expect(scraper.getOverlap(outer, inner)).toBe(60);
     });
 
     test("returns full length when ranges are identical", () => {
-      const a = new Shift(10, 20, "X", false, TASKS.DOCTOR.id, "A");
-      const b = new Shift(10, 20, "X", false, TASKS.USER.id, "B");
+      const a = new Shift(10, 20, "X", false, TASKS.DOCTOR.providerType, "A");
+      const b = new Shift(10, 20, "X", false, TASKS.USER.providerType, "B");
       expect(scraper.getOverlap(a, b)).toBe(10);
     });
   });

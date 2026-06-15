@@ -68,7 +68,7 @@ describe("UserScraper", () => {
 
     const stored = browser.storage.local.set.mock.calls[0][0].shifts;
     for (const shift of Object.values(stored)) {
-      expect(shift.providerType).toBe(TASKS.USER.id);
+      expect(shift.providerType).toBe(TASKS.USER.providerType);
     }
   });
 
@@ -98,7 +98,7 @@ describe("UserScraper", () => {
   });
 
   test("scrape() merges into existing shifts without overwriting unrelated entries", async () => {
-    const sentinel = makeStoredShift(9999, 10000, "OTHER", "SOMEONE", TASKS.DOCTOR.id);
+    const sentinel = makeStoredShift(9999, 10000, "OTHER", "SOMEONE", TASKS.DOCTOR.providerType);
     browser.storage.local.get.mockResolvedValue({ shifts: { 9999: sentinel } });
 
     await new UserScraper().scrape();
@@ -118,7 +118,7 @@ describe("UserScraper", () => {
 
   test("getAllShifts sets providerType USER and empty providerName on all shifts", () => {
     new UserScraper().getAllShifts().forEach(s => {
-      expect(s.providerType).toBe(TASKS.USER.id);
+      expect(s.providerType).toBe(TASKS.USER.providerType);
       expect(s.providerName).toBe("");
     });
   });

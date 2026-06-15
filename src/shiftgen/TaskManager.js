@@ -3,7 +3,7 @@
  * @brief Class for scheduling tasks for multi-tab workflow
  */
 
-import { TASKS, STATE, defaultTaskStates, infoBadge, errorBadge } from "./common.js"
+import { TASKS, STATE, MESSAGE_IDS, defaultTaskStates, infoBadge, errorBadge, taskIdToProviderType } from "./common.js"
 
 /**
  * @class TaskManager
@@ -43,10 +43,10 @@ export class TaskManager {
    * @param {function} sendResponse Response callback function
    */
   async handleMessage(message, sender, sendResponse) {
-    const { type, taskId, data } = message;
+    const { id, taskId, data } = message;
 
-    switch (type) {
-      case 'START':
+    switch (id) {
+      case MESSAGE_IDS.START:
         if (this.state === STATE.IDLE) {
           this.state = STATE.CREATE_TAB_USER;
           await this.saveWorkflow();
@@ -54,8 +54,8 @@ export class TaskManager {
         }
         break;
 
-      case 'CONTENT_SCRIPT_READY':
-        console.log(`Content script ready in tab ${sender.tab.id} from ${taskId}`);
+      case MESSAGE_IDS.CONTENT_SCRIPT_READY:
+        console.log(`[${taskIdToProviderType(taskId)}] content script ready in tab ${sender.tab.id}`);
         if (this.state === STATE.CREATE_TAB_USER) {
           await this.triggerChangeSite(taskId, sender.tab.id, TASKS.USER.siteId);
         } else if (this.state === STATE.CREATE_TAB_PROVIDER) {
@@ -68,7 +68,7 @@ export class TaskManager {
         } else if (this.state === STATE.CHANGE_SITE_PA) {
           this.state = STATE.COLLECT_SCHEDULES;
           await this.saveWorkflow();
-          await this.triggerCollectSchedules(TASKS.PA.id, sender.tab.id);
+          await this.triggerCollectSchedules(TASKS.PA_NP.id, sender.tab.id);
         } else if (this.state === STATE.CHANGE_SITE_DOCTOR) {
           this.state = STATE.COLLECT_SCHEDULES;
           await this.saveWorkflow();
@@ -80,9 +80,9 @@ export class TaskManager {
         }
         break;
 
-      case 'SCHEDULES':
+      case MESSAGE_IDS.SCHEDULES:
         if (this.state == STATE.COLLECT_SCHEDULES) {
-          console.log(data.pendingSchedules)
+          console.log(`[${taskIdToProviderType(taskId)}] handling ${data.pendingSchedules.length} remaining schedules`);
           this.pendingSchedules = data.pendingSchedules;
           await this.saveWorkflow();
           if (this.pendingSchedules.length !== 0) {
@@ -97,13 +97,13 @@ export class TaskManager {
         }
         break;
 
-      case 'TASK_RUNNING':
+      case MESSAGE_IDS.TASK_RUNNING:
         if (this.state === STATE.RUNNING) {
           await this.handleTaskRunning(taskId, sender.tab.id);
         }
         break;
 
-      case 'TASK_COMPLETED':
+      case MESSAGE_IDS.TASK_COMPLETED:
         if (this.state === STATE.RUNNING) {
           this.state = STATE.COMPLETED;
           await this.saveWorkflow();
@@ -111,7 +111,7 @@ export class TaskManager {
         }
         break;
 
-      case 'TASK_FAILED':
+      case MESSAGE_IDS.TASK_FAILED:
         if (this.state !== STATE.IDLE) {
           this.state = STATE.IDLE;
           await this.saveWorkflow();
@@ -140,11 +140,10 @@ export class TaskManager {
    */
   async handleStart() {
     console.log("Starting task workflow");
-    this.taskStates = {
-      0: { status: 'pending', tabId: null, result: null },
-      1: { status: 'pending', tabId: null, result: null },
-      2: { status: 'pending', tabId: null, result: null }
-    };
+    this.taskStates = defaultTaskStates();
+    this.taskStates[TASKS.USER.id].status = 'pending';
+    this.taskStates[TASKS.DOCTOR.id].status = 'pending';
+    this.taskStates[TASKS.PA_NP.id].status = 'pending';
     this.pendingSchedules = [];
     await browser.storage.local.set({ shifts: {} });
 
@@ -165,7 +164,7 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Task ${taskId} running in tab ${tabId}`);
+    console.log(`[${taskIdToProviderType(taskId)}] running in tab ${tabId}`);
   }
 
   /**
@@ -183,7 +182,7 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Task ${taskId} completed in tab ${tabId}`);
+    console.log(`[${taskIdToProviderType(taskId)}] completed in tab ${tabId}`);
 
     // Check if all pending schedules have been scraped
     if (this.pendingSchedules.length !== 0) {
@@ -210,16 +209,16 @@ export class TaskManager {
       await this.createTab(TASKS.DOCTOR.id, TASKS.DOCTOR.url);
       return;
     } else if (this.taskStates[TASKS.USER.id].status === 'all completed' &&
-               this.taskStates[TASKS.PA.id].status === 'pending')
+               this.taskStates[TASKS.PA_NP.id].status === 'pending')
     {
       this.state = STATE.CREATE_TAB_PROVIDER;
       await this.saveWorkflow();
-      await this.createTab(TASKS.PA.id, TASKS.PA.url)
+      await this.createTab(TASKS.PA_NP.id, TASKS.PA_NP.url)
       return;
     }  // Check if task workflow is complete
       else if (
         this.taskStates[TASKS.USER.id].status === 'all completed' &&
-        this.taskStates[TASKS.PA.id].status === 'all completed' &&
+        this.taskStates[TASKS.PA_NP.id].status === 'all completed' &&
         this.taskStates[TASKS.DOCTOR.id].status === 'all completed'
     ) {
       console.log("Completed task workflow");
@@ -252,10 +251,10 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.error(`Task ${taskId} failed:`, error);
+    console.error(`[${taskIdToProviderType(taskId)}] failed:`, error);
     console.log(this.taskStates);
     await this.closeTabs();
-    await errorBadge(`Task ${taskId} failed: ${error}`);
+    await errorBadge(`Scraping ${taskIdToProviderType(taskId)} failed: ${error}`);
   }
 
   /**
@@ -286,7 +285,7 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Task ${taskId} created in tab ${targetTabId} for ${url}`);
+    console.log(`[${taskIdToProviderType(taskId)}] created in tab ${targetTabId} for ${url}`);
   }
 
   /**
@@ -296,7 +295,7 @@ export class TaskManager {
   async triggerTask(taskId, tabId) {
     // Send message to trigger task
     browser.tabs.sendMessage(tabId, {
-      type: 'TRIGGER_TASK',
+      id: MESSAGE_IDS.TRIGGER_TASK,
       taskId: taskId,
     });
 
@@ -307,18 +306,17 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Task ${taskId} triggered in tab ${tabId}`);
+    console.log(`[${taskIdToProviderType(taskId)}] triggered in tab ${tabId}`);
   }
 
   /**
-   * @brief Triggers a site change based on the task order USER -> DOCTOR -> PA
+   * @brief Triggers a site change based on the task order USER -> DOCTOR -> PA/NP
    * @param {number} taskId Task ID scheduling the change
    * @param {number} tabId Tab ID
    * @param {number} siteId Site ID to change site to. Null if USER is requesting
    *                        a site change to USER to reset the site state.
    */
   async triggerChangeSite(taskId, tabId, siteId=null) {
-    let site = ""
     let taskToUpdate = null;
 
     if (siteId === null) {
@@ -326,12 +324,10 @@ export class TaskManager {
         this.state = STATE.CHANGE_SITE_DOCTOR;
         siteId = TASKS.DOCTOR.siteId;
         taskToUpdate = TASKS.DOCTOR.id;
-        site = "DOCTOR";
       } else if (taskId === TASKS.DOCTOR.id) {
         this.state = STATE.CHANGE_SITE_PA;
-        siteId = TASKS.PA.siteId;
-        taskToUpdate = TASKS.PA.id;
-        site = "PA"
+        siteId = TASKS.PA_NP.siteId;
+        taskToUpdate = TASKS.PA_NP.id;
       } else {
         this.state = STATE.IDLE;
         await this.saveWorkflow();
@@ -341,11 +337,10 @@ export class TaskManager {
     } else {
       this.state = STATE.CHANGE_SITE_USER;
       taskToUpdate = TASKS.USER.id;
-      site = "USER"
     }
 
     browser.tabs.sendMessage(tabId, {
-      type: 'TRIGGER_CHANGE_SITE',
+      id: MESSAGE_IDS.TRIGGER_CHANGE_SITE,
       taskId: taskId,
       taskToUpdate: taskToUpdate,
       siteId: siteId
@@ -358,7 +353,7 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Triggered to change site to ${site} in tab ${tabId}`);
+    console.log(`[${taskIdToProviderType(taskId)}] triggered to change site to ${taskIdToProviderType(taskToUpdate)} in tab ${tabId}`);
   }
 
   /**
@@ -377,7 +372,7 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Task ${taskId} triggered to navigate to ${url} in tab ${tabId}`);
+    console.log(`[${taskIdToProviderType(taskId)}] triggered to navigate to ${url} in tab ${tabId}`);
   }
 
   /**
@@ -387,7 +382,7 @@ export class TaskManager {
    */
   async triggerCollectSchedules(taskId, tabId) {
     browser.tabs.sendMessage(tabId, {
-      type: 'TRIGGER_COLLECT_SCHEDULES',
+      id: MESSAGE_IDS.TRIGGER_COLLECT_SCHEDULES,
       taskId: taskId
     });
 
@@ -398,7 +393,7 @@ export class TaskManager {
 
     await this.saveWorkflow();
 
-    console.log(`Task ${taskId} triggered to collect schedules in tab ${tabId}`);
+    console.log(`[${taskIdToProviderType(taskId)}] triggered to collect schedules in tab ${tabId}`);
   }
 
   /**

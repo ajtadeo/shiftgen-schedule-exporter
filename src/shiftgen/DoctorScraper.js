@@ -51,7 +51,7 @@ export class DoctorScraper extends Scraper {
 
       if (maxOverlapShift !== undefined) {
         localStorage["shifts"][userShift.startTime]["providerName"] = maxOverlapShift.providerName;
-        localStorage["shifts"][userShift.startTime]["providerType"] = TASKS.DOCTOR.id;
+        localStorage["shifts"][userShift.startTime]["providerType"] = this.providerType;
       }
     }
 

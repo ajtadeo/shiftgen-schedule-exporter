@@ -1,6 +1,6 @@
 /**
  * @file testHelpers.js
- * @brief Shared helpers for DoctorScraper, PaScraper, and UserScraper tests
+ * @brief Shared helpers for DoctorScraper, PaNpScraper, and UserScraper tests
  *
  * HTML fixture summary (from real calendar pages):
  *   doctor_calendar_1.html  - 264 cells, 128 parseable (CHOC + SJH + named locations)
@@ -31,7 +31,7 @@ export function makeStoredShift(
   endTime,
   location,
   providerName = "",
-  providerType = TASKS.USER.id
+  providerType = TASKS.USER.providerType
 ) {
   return { startTime, endTime, location, overnight: false, providerType, providerName };
 }
@@ -42,7 +42,7 @@ export function makeShift(overrides = {}) {
     endTime:   new Date('2026-03-01T16:00:00-08:00').toISOString(),
     location:  'CHOC Main',
     providerName: 'Dr. Smith',
-    providerType: 1, // DOCTOR
+    providerType: TASKS.DOCTOR.providerType,
     overnight: false,
     ...overrides
   };

@@ -52,20 +52,30 @@ export const MESSAGE_IDS = Object.freeze({
   TRIGGER_TASK: 'TRIGGER_TASK',
   TRIGGER_CHANGE_SITE: 'TRIGGER_CHANGE_SITE',
   TRIGGER_COLLECT_SCHEDULES: 'TRIGGER_COLLECT_SCHEDULES',
-  REQUEST_GOOGLE_CALENDAR_EXPORT: 'REQUEST_GOOGLE_CALENDAR_EXPORT',
-  REPLY_GOOGLE_CALENDAR_EXPORT: 'REPLY_GOOGLE_CALENDAR_EXPORT'
+  EXPORT_GCAL: 'EXPORT_GCAL'
 });
+
+export const BADGE_IDS = Object.freeze({
+  WORKFLOW_DONE: 'WORKFLOW_DONE',
+  WORKFLOW_FAILED: 'WORKFLOW_FAILED',
+  CALENDAR_ID_MISSING: 'CALENDAR_ID_MISSING',
+  TARGET_MONTH_MISSING: 'TARGET_MONTH_MISSING',
+  TARGET_YEAR_MISSING: 'TARGET_YEAR_MISSING',
+  SHIFTGEN_LOGGED_OUT: 'SHIFTGEN_LOGGED_OUT',
+  EXPORT_GCAL_DONE: 'EXPORT_GCAL_DONE',
+  EXPORT_GCAL_FAILED: 'EXPORT_GCAL_FAILED'
+})
 
 export const MESSAGE_TYPE = Object.freeze({
   INFO: 'INFO',
   ERROR: 'ERROR'
 });
 
-export async function infoBadge(message = "", icon) {
+export async function infoBadge(id, message = "", icon) {
   if (message.length > 0) {
     browser.storage.local.get(["messages"], (result) => {
       const messages = result.messages || [];
-      messages.push({message: message, type: MESSAGE_TYPE.INFO});
+      messages.push({ id: id, message: message, type: MESSAGE_TYPE.INFO });
       browser.storage.local.set({ messages });
     });
   }
@@ -73,11 +83,11 @@ export async function infoBadge(message = "", icon) {
   browser.action.setBadgeBackgroundColor({ color: "#9DCAA0" });
 }
 
-export async function errorBadge(message = "") {
+export async function errorBadge(id, message = "") {
   if (message.length > 0) {
     browser.storage.local.get(["messages"], (result) => {
       const messages = result.messages || [];
-      messages.push({message: message, type: MESSAGE_TYPE.ERROR});
+      messages.push({ id: id, message: message, type: MESSAGE_TYPE.ERROR });
       browser.storage.local.set({ messages });
     });
   }

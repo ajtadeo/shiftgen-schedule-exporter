@@ -3,7 +3,7 @@
  * @brief Class for scheduling tasks for multi-tab workflow
  */
 
-import { TASKS, STATE, MESSAGE_IDS, defaultTaskStates, infoBadge, errorBadge, taskIdToProviderType } from "./common.js"
+import { TASKS, STATE, MESSAGE_IDS, BADGE_IDS, defaultTaskStates, infoBadge, errorBadge, taskIdToProviderType } from "./common.js"
 
 /**
  * @class TaskManager
@@ -30,7 +30,7 @@ export class TaskManager {
       if (changeInfo.url && changeInfo.url === "https://www.shiftgen.com/") {
         this.state = STATE.IDLE;
         await this.saveWorkflow();
-        await errorBadge("Oops, logged out of ShiftGen. Please log in and try again.");
+        await errorBadge(BADGE_IDS.SHIFTGEN_LOGGED_OUT, "Oops, logged out of ShiftGen. Please log in and try again.");
         browser.tabs.remove(tabId);
       }
     });
@@ -228,7 +228,7 @@ export class TaskManager {
       this.taskStates = defaultTaskStates();
 
       await this.saveWorkflow();
-      await infoBadge("Completed scraping shifts", "🐻");
+      await infoBadge(BADGE_IDS.WORKFLOW_DONE, "Completed scraping shifts", "🐻");
     } else {
       this.state = STATE.IDLE;
       await this.saveWorkflow();
@@ -254,7 +254,7 @@ export class TaskManager {
     console.error(`[${taskIdToProviderType(taskId)}] failed:`, error);
     console.log(this.taskStates);
     await this.closeTabs();
-    await errorBadge(`Scraping ${taskIdToProviderType(taskId)} failed: ${error}`);
+    await errorBadge(BADGE_IDS.WORKFLOW_FAILED, `Scraping ${taskIdToProviderType(taskId)} failed: ${error}`);
   }
 
   /**

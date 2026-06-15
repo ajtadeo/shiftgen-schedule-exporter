@@ -3,8 +3,7 @@
  * @brief JavaScript for extension popup.
  */
 
-import { TASKS, MESSAGE_IDS, infoBadge, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
-import { getAccessToken } from "../googleAuth.js";
+import { TASKS, MESSAGE_IDS, BADGE_IDS, errorBadge, clearBadge, MESSAGE_TYPE } from "../shiftgen/common.js";
 
 // Window events
 window.addEventListener("DOMContentLoaded", () => loadPopup());
@@ -26,49 +25,13 @@ export async function loadPopup() {
     let localStorage = await browser.storage.local.get(["shifts", "calendar_id"]);
 
     if (localStorage.calendar_id === "") {
-      await errorBadge();
+      await errorBadge(BADGE_IDS.CALENDAR_ID_MISSING);
       addErrorMessage("Please set Calendar ID before exporting to Google Calendar.");
       return;
     }
 
     document.querySelector("#google-calendar-export-button").disabled = true;
-    let token;
-    try {
-      token = await getAccessToken();
-    } catch (error) {
-      await errorBadge();
-      addErrorMessage(error.message);
-      return;
-    }
-
-    // browser.identity.getAuthToken({ interactive: true }, async (token) => {
-      let shifts = localStorage.shifts;
-      let calendarId = localStorage.calendar_id;
-      let postedAllEvents = true;
-      let errorMessage = "";
-      for (const [key, value] of Object.entries(shifts)) {
-        let [result, err] = await exportToGoogleCalendar(token, calendarId, value);
-        if (result === false) {
-          postedAllEvents = false;
-          errorMessage = err;
-          break;
-        }
-      }
-
-      if (!postedAllEvents) {
-        await errorBadge();
-        addErrorMessage(`Failed to export shifts to Google Calendar: ${errorMessage}. Please try again.`);
-      } else {
-        await infoBadge("Successfully exported shifts to Google Calendar!", "🪁");
-      }
-
-      document.querySelector("#google-calendar-export-button").disabled = false;
-
-      // SANITY CHECK
-      // for (const [key, value] of Object.entries(TEST_SHIFTS)) {
-      //   await exportToGoogleCalendar(token, value)
-      // }
-    // });
+    browser.runtime.sendMessage({ id: MESSAGE_IDS.EXPORT_GCAL });
   });
 
   // setup automatic website scraper for all shifts
@@ -76,13 +39,13 @@ export async function loadPopup() {
     let localStorage = await browser.storage.local.get(["target_month", "target_year"]);
 
     if (localStorage.target_month === "") {
-      await errorBadge();
+      await errorBadge(BADGE_IDS.TARGET_MONTH_MISSING);
       addErrorMessage("Please set target month before scraping shifts.");
       return;
     }
 
     if (localStorage.target_year === "") {
-      await errorBadge();
+      await errorBadge(BADGE_IDS.TARGET_YEAR_MISSING);
       addErrorMessage("Please set target year before scraping shifts.");
       return;
     }
@@ -92,21 +55,10 @@ export async function loadPopup() {
     browser.runtime.sendMessage({ id: MESSAGE_IDS.START });
   })
 
-  // populate shifts table
   let localStorage = await browser.storage.local.get(["shifts", "calendar_id", "target_month", "target_year"]);
-  let shifts = localStorage.shifts;
-  const tbody = document.querySelector("#shift-tbody");
-  const template = document.querySelector("#shift-template");
-  for (const [key, value] of Object.entries(shifts)) {
-    const clone = template.content.cloneNode(true);
-    clone.querySelector(".shift-start").textContent = new Date(value.startTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
-    clone.querySelector(".shift-end").textContent = new Date(value.endTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
-    clone.querySelector(".shift-location").textContent = value.location;
-    clone.querySelector(".shift-provider-name").textContent = value.providerName;
-    clone.querySelector(".shift-provider-type").textContent = value.providerType;
-    clone.querySelector(".shift-overnight").textContent = value.overnight;
-    tbody.appendChild(clone);
-  }
+
+  // populate shifts table
+  populateShiftsTable(localStorage.shifts);
 
   // handle calendar id form submission
   if (localStorage.calendar_id !== "") {
@@ -199,14 +151,6 @@ export async function loadPopup() {
     noShiftsMessage.style.display = "block";
   })
 
-  // handle no shifts to display
-  let table = document.querySelector("#shifts-table");
-  let numRows = table.tBodies[0].rows.length;
-  if (numRows !== 0) {
-    let noShiftsMessage = document.querySelector("#no-shifts-message")
-    noShiftsMessage.style.display = "none";
-  }
-
   // handle error message close
   document.querySelector("#messages").addEventListener("click", (event) => {
     if (event.target.classList.contains('message-close-btn')) {
@@ -235,64 +179,31 @@ async function handleToggleButtons(tabs) {
  * @param {*} area
  */
 async function handleDisplayMessages(changes, area) {
-  if (area !== "local" || !changes.messages) return;
+  if (!changes.messages) return;
   const newMessages = changes.messages.newValue || [];
   const oldMessages = changes.messages.oldValue || [];
 
   if (newMessages && newMessages.length > 0) {
     // Only show messages that were just added
     const added = newMessages.slice(oldMessages.length);
-    added.forEach(msg => {
+    for (const msg of added) {
       if (msg.type === MESSAGE_TYPE.INFO) addInfoMessage(msg.message);
       else if (msg.type === MESSAGE_TYPE.ERROR) addErrorMessage(msg.message);
-    });
+
+      // Re-enable Google Calendar export button
+      if (msg.id === BADGE_IDS.EXPORT_GCAL_FAILED || msg.id === BADGE_IDS.EXPORT_GCAL_DONE) {
+        document.querySelector("#google-calendar-export-button").disabled = false;
+      }
+
+      // Display newly scraped shifts
+      if (msg.id === BADGE_IDS.WORKFLOW_DONE) {
+        let localStorage = await browser.storage.local.get(["shifts"]);
+        populateShiftsTable(localStorage.shifts);
+      }
+    };
     await browser.storage.local.set({ messages: [] });
   }
 };
-
-/**
- * @brief Sends a POST request to create a new event for shift in Google Calendar
- * @param {string} token
- * @param {string} calendarId
- * @param {object} shift
- * @returns Tuple where the first item is true if exporting was successful, and
- * the second item is an error message if unsuccessful.
- */
-async function exportToGoogleCalendar(token, calendarId, shift) {
-  let event = {
-    summary: `CHOC Scribe: ${shift.location} ${shift.providerName}`,
-    description: 'Generated using Schedule Exporter for ShiftGen!',
-    start: {
-      'dateTime': new Date(shift.startTime).toISOString(),
-      'timeZone': 'America/Los_Angeles'
-    },
-    end: {
-      'dateTime': new Date(shift.endTime).toISOString(),
-      'timeZone': 'America/Los_Angeles'
-    }
-  };
-
-  let options = {
-    method: 'POST',
-    async: true,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(event),
-  };
-
-  try {
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
-      options
-    );
-    const data = await response.json();
-    return [true, ""];
-  } catch (err) {
-    return [false, err];
-  }
-}
 
 /**
  * @brief Adds an error message to the top of the popup UI.
@@ -349,4 +260,36 @@ export async function wakeServiceWorker() {
       }
     });
   });
+}
+
+/**
+ * @brief Clears and populates shifts table with the shifts argument.
+ * @param {Array[object]} shifts List of shifts
+ */
+function populateShiftsTable(shifts) {
+  // Clear table
+  const tbody = document.querySelector("#shift-tbody");
+  tbody.replaceChildren();
+
+  // Display no shifts message
+  let noShiftsMessage = document.querySelector("#no-shifts-message")
+  if (!shifts || Object.keys(shifts).length === 0) {
+    noShiftsMessage.style.display = "block";
+    return;
+  }
+
+  noShiftsMessage.style.display = "none";
+
+  // Populate with shifts
+  const template = document.querySelector("#shift-template");
+  for (const [key, value] of Object.entries(shifts)) {
+    const clone = template.content.cloneNode(true);
+    clone.querySelector(".shift-start").textContent = new Date(value.startTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
+    clone.querySelector(".shift-end").textContent = new Date(value.endTime).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false, timeZone: 'America/Los_Angeles' });
+    clone.querySelector(".shift-location").textContent = value.location;
+    clone.querySelector(".shift-provider-name").textContent = value.providerName;
+    clone.querySelector(".shift-provider-type").textContent = value.providerType;
+    clone.querySelector(".shift-overnight").textContent = value.overnight;
+    tbody.appendChild(clone);
+  }
 }

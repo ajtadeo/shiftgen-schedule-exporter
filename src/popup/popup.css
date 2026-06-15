@@ -12,6 +12,7 @@
   --grey-bg-color: rgb(212 212 212);
   --blue-bg-color: rgb(53 86 106);
   --blue-hover-color: rgb(68 112 137);
+  --border-radius: 0.3rem;
   font-family: Roboto Flex,ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
 }
 
@@ -25,7 +26,7 @@ body {
 
 input, select {
   border: solid var(--orange-border-color) 1px;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   width: 100%;
   cursor: pointer;
   font-family: Roboto Flex,ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
@@ -36,7 +37,7 @@ button {
   font-weight: 600;
   padding: 0.1rem 0.5rem;
   border: transparent;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
 }
 
 button:hover:not([disabled]) {
@@ -44,11 +45,16 @@ button:hover:not([disabled]) {
   cursor: pointer;
 }
 
+p {
+  font-size: small;
+}
+
 h2 {
   font-size: medium;
 }
 
 h3 {
+  font-size: small;
   margin-top: 0;
   padding: 0;
 }
@@ -91,8 +97,14 @@ footer button:hover:not([disabled]) {
 
 #settings-table {
   width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
   font-size: smaller;
   margin-bottom: 1rem;
+}
+
+#settings-table td, #settings-table th {
+  padding: 0;
 }
 
 #settings-table h3 {
@@ -111,24 +123,24 @@ footer button:hover:not([disabled]) {
   width: 100%;
   table-layout: auto;
   border-collapse: collapse;
-  margin-bottom: 10px;
+  margin-bottom: 1rem;
   font-size: small;
 }
 
 #shifts-table th:first-of-type {
-  border-top-left-radius: 5px;
+  border-top-left-radius: var(--border-radius);;
 }
 
 #shifts-table th:last-of-type {
-  border-top-right-radius: 5px;
+  border-top-right-radius: var(--border-radius);;
 }
 
 #shifts-table tr:last-of-type td:first-of-type {
-  border-bottom-left-radius: 5px;
+  border-bottom-left-radius: var(--border-radius);;
 }
 
 #shifts-table tr:last-of-type td:last-of-type {
-  border-bottom-right-radius: 5px;
+  border-bottom-right-radius: var(--border-radius);;
 }
 
 #shifts-table th {
@@ -146,7 +158,7 @@ footer button:hover:not([disabled]) {
 }
 
 #clear-shifts {
-  margin-bottom: 10px;
+  margin-bottom: 1rem;
 }
 
 #no-shifts-message {
@@ -164,8 +176,9 @@ footer button:hover:not([disabled]) {
 .message {
   display: flex;
   padding: 0.5em 1em;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   gap: 1em;
+  text-align: left;
 }
 
 .error-message {

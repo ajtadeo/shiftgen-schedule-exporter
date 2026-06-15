@@ -5,7 +5,7 @@
 
 import { jest } from '@jest/globals';
 import { TaskManager } from '../src/shiftgen/TaskManager.js';
-import { TASKS, STATE, MESSAGE_TYPE, defaultTaskStates, MESSAGE_IDS } from '../src/shiftgen/common.js';
+import { TASKS, STATE, MESSAGE_TYPE, defaultTaskStates, MESSAGE_IDS, BADGE_IDS } from '../src/shiftgen/common.js';
 
 /** @brief Returns a fresh IDLE workflow object */
 function idleWorkflow() {
@@ -186,7 +186,7 @@ describe('handleTaskFailed', () => {
     await m.handleTaskFailed(TASKS.USER.id, 'oops');
     expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
     expect(browser.storage.local.set).toHaveBeenLastCalledWith({
-      messages: [{ message: 'Scraping User failed: oops', type: MESSAGE_TYPE.ERROR }]
+      messages: [{ id: BADGE_IDS.WORKFLOW_FAILED, message: 'Scraping User failed: oops', type: MESSAGE_TYPE.ERROR }]
     });
   });
 });
@@ -277,7 +277,7 @@ describe('handleTaskCompleted', () => {
     expect(m.state).toBe(STATE.IDLE);
     expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "🐻" });
     expect(browser.storage.local.set).toHaveBeenLastCalledWith({
-      messages: [{ message: 'Completed scraping shifts', type: MESSAGE_TYPE.INFO }]
+      messages: [{ id: BADGE_IDS.WORKFLOW_DONE, message: 'Completed scraping shifts', type: MESSAGE_TYPE.INFO }]
     });
   });
 
@@ -297,7 +297,7 @@ describe('handleTaskCompleted', () => {
     expect(m.taskStates[TASKS.PA_NP.id].status).toBe('failed');
     expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
     expect(browser.storage.local.set).toHaveBeenLastCalledWith({
-      messages: [{ message: 'Scraping PA/NP failed: Invalid completion state', type: MESSAGE_TYPE.ERROR }]
+      messages: [{ id: BADGE_IDS.WORKFLOW_FAILED, message: 'Scraping PA/NP failed: Invalid completion state', type: MESSAGE_TYPE.ERROR }]
     });
   });
 });
@@ -380,7 +380,7 @@ describe('triggerChangeSite', () => {
     expect(m.taskStates[TASKS.PA_NP.id].status).toBe('failed');
     expect(browser.action.setBadgeText).toHaveBeenCalledWith({ text: "ERR" });
     expect(browser.storage.local.set).toHaveBeenLastCalledWith({
-      messages: [{ message: 'Scraping PA/NP failed: Invalid site change trigger', type: MESSAGE_TYPE.ERROR }]
+      messages: [{ id: BADGE_IDS.WORKFLOW_FAILED, message: 'Scraping PA/NP failed: Invalid site change trigger', type: MESSAGE_TYPE.ERROR }]
     });
   });
 });

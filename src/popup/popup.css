@@ -179,6 +179,13 @@ footer button:hover:not([disabled]) {
   border-radius: var(--border-radius);
   gap: 1em;
   text-align: left;
+  align-items: start;
+}
+
+.message p {
+  font-size: small;
+  margin: 0;
+  padding: 0;
 }
 
 .error-message {
@@ -192,4 +199,7 @@ footer button:hover:not([disabled]) {
 .message-close-btn {
   cursor: pointer;
   user-select: none;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
 }

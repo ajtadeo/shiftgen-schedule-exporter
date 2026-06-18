@@ -201,6 +201,13 @@ async function handleDisplayMessages(changes, area) {
         populateShiftsTable(localStorage.shifts);
       }
     };
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    clearBadge();
+
     await browser.storage.local.set({ messages: [] });
   }
 };

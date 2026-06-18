@@ -159,6 +159,11 @@ async function exportShiftToGoogleCalendar(token, calendarId, shift) {
       options
     );
     const data = await response.json();
+    if (!response.ok) {
+      const message = data?.error?.message || `HTTP ${response.status}`;
+      return [false, message];
+    }
+
     return [true, ""];
   } catch (err) {
     return [false, err];

@@ -3,10 +3,8 @@
  * @brief Utility functions for Google API authentication.
  */
 
-const GOOGLE_OAUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
-const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const CLIENT_ID = '1000397082507-quhbbs8d25vjs5k57cpc5cuuvst84s5n.apps.googleusercontent.com'; // web app
-const CLIENT_SECRET = "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"; // web app
+const CLIENT_ID = '1000397082507-41g95ro42chkq34oslnuhi5dfikpjubm.apps.googleusercontent.com'; // web app
+const RELAY_URL = "https://shiftgen-schedule-exporter-backend.alyssajtadeo.workers.dev";
 const REDIRECT_URI = browser.identity.getRedirectURL();
 const SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
@@ -33,15 +31,15 @@ export async function getAccessToken() {
   }
 
   // Fallback for no stored token or refresh failed
-  implicitAuthFlow();
+  return await googleAuthFlow();
 }
 
-async function implicitAuthFlow() {
+async function googleAuthFlow() {
   // Generate PKCE code verifier and challenge
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-  const authUrl = new URL(GOOGLE_OAUTH_URL);
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
   authUrl.searchParams.set('client_id', CLIENT_ID);
   authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
   authUrl.searchParams.set('response_type', 'code');
@@ -62,15 +60,12 @@ async function implicitAuthFlow() {
 }
 
 async function exchangeCodeForToken(code, codeVerifier) {
-  const response = await fetch(GOOGLE_TOKEN_URL, {
+  const response = await fetch(`${RELAY_URL}/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      redirect_uri: REDIRECT_URI,
-      grant_type: 'authorization_code',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify  ({
       code: code,
+      redirect_uri: REDIRECT_URI,
       code_verifier: codeVerifier
     })
   });
@@ -83,15 +78,10 @@ async function exchangeCodeForToken(code, codeVerifier) {
 }
 
 async function refreshAccessToken(refreshToken) {
-  const response = await fetch(GOOGLE_TOKEN_URL, {
+  const response = await fetch(`${RELAY_URL}/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken })
   });
 
   const data = await response.json();
